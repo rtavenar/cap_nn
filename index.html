@@ -5,18 +5,31 @@
         <!-- <script type="text/javascript"
             src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js">
         </script> -->
-        <!-- <script src="js/GPXParser.min.js"></script> -->
+        <script src="js/GPXParser.min.js"></script>
         <script type="text/javascript">
+            // function load_gpx(filename) {
+            //     // Create an XMLHttpRequest object
+            //     const xhttp = new XMLHttpRequest();
+
+            //     // Send a request
+            //     xhttp.open("GET", filename);
+            //     xhttp.send();
+            //     var txt = "<xml>" + xhttp.responseText + "</xml>";
+            //     var parser = new GPXParser(txt);
+            //     return parser;
+            // }
             function load_gpx(filename) {
-                // Create an XMLHttpRequest object
                 const xhttp = new XMLHttpRequest();
 
                 // Send a request
                 xhttp.open("GET", filename);
                 xhttp.send();
-                var txt = "<xml>" + xhttp.responseText + "</xml>";
-                var parser = new GPXParser(txt);
-                return parser;
+                var s_gpx = "<xml>" + xhttp.responseText + "</xml>";
+
+                var gpx = new gpxParser(); //Create gpxParser Object
+                gpx.parse(s_gpx);
+                // var parser = new GPXParser(txt);
+                return gpx;
             }
 
             function fill_elements() {
