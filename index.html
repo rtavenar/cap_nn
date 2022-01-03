@@ -2,14 +2,19 @@
     <head>
         <meta charset="UTF-8" />
         <script src="js/main.js"></script>
-        <script src="js/GPXParser.min.js"></script>
+        <script type="text/javascript"
+            src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js">
+        </script>
+        <!-- <script src="js/GPXParser.min.js"></script> -->
         <script type="text/javascript">
             function load_gpx(filename) {
-                var gpx = new gpxParser();
-                console.log(filename);
-                fetch(filename)
-                .then(response => gpx.parse(response))
-                .then(gpx_obj => {return gpx_obj;});
+                $.ajax({url: filename,
+                    dataType: "xml",
+                    success: function(data) {
+                        var parser = new GPXParser(data);
+                        return parser;
+                    }
+                });
             }
 
             function fill_elements() {
@@ -29,6 +34,7 @@
                 document.getElementById("params").innerHTML = s_params;
 
                 var gpx_o = load_gpx(url);
+                console.log(gpx_o);
             }
         </script>
     </head>
