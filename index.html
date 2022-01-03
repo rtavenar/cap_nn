@@ -19,8 +19,6 @@
                 var $_GET = parse_args();
                 var url = "gpx/" + $_GET["track"] + ".gpx";
 
-                document.getElementById("track").innerHTML = "Track URL: <code>" + url + "</code>";
-
                 var s_params = "<ul>"
                 for ([key, value] of Object.entries($_GET)) {
                     if (key != "track") {
@@ -32,9 +30,9 @@
 
                 var gpx_o = load_gpx(url);
                 
-                var s_tracks = "<h2>List of tracks</h2><ul>"
+                var s_tracks = "<h2>List of tracks found in <code>" + url + "</code></h2><ul>"
                 for (const track of gpx_o.tracks) {
-                    s_tracks += "<li>" + track.name + ": " + (track.distance.total / 1000) + "km</li>";
+                    s_tracks += "<li>" + track.name + ": " + Math.round(track.distance.total / 1000) + "km</li>";
                 }
                 s_tracks += "</ul>";
                 document.getElementById("found_tracks").innerHTML = s_tracks;
