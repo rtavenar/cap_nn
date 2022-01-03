@@ -10,10 +10,3 @@ function parse_args() {
 
     return $_GET;
 }
-
-function load_gpx(filename) {
-    var gpx = new gpxParser();
-    fetch(filename)
-    .then(response => gpx.parse(response))
-    .then(gpx_obj => {return gpx_obj;});
-}

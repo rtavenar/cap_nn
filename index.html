@@ -4,6 +4,14 @@
         <script src="js/main.js"></script>
         <script src="js/GPXParser.min.js"></script>
         <script type="text/javascript">
+            function load_gpx(filename) {
+                var gpx = new gpxParser();
+                console.log(filename);
+                fetch(filename)
+                .then(response => gpx.parse(response))
+                .then(gpx_obj => {return gpx_obj;});
+            }
+
             function fill_elements() {
                 // get query arguments            
                 var $_GET = parse_args();
