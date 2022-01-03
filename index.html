@@ -12,7 +12,7 @@
                 const xhttp = new XMLHttpRequest();
 
                 // Send a request
-                xhttp.open("GET", "ajax_info.txt");
+                xhttp.open("GET", filename);
                 xhttp.send();
                 var parser = new GPXParser(xhttp.responseXML);
                 return parser;
