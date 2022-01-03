@@ -14,7 +14,8 @@
                 // Send a request
                 xhttp.open("GET", filename);
                 xhttp.send();
-                var parser = new GPXParser(xhttp.responseXML);
+                var txt = "<xml>" + xhttp.responseText + "</xml>";
+                var parser = new GPXParser(txt);
                 return parser;
             }
 
