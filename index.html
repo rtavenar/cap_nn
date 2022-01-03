@@ -1,0 +1,33 @@
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <script src="js/main.js"></script>
+        <script src="js/GPXParser.min.js"></script>
+        <script type="text/javascript">
+            function fill_elements() {
+                // get query arguments            
+                var $_GET = parse_args();
+                var url = "gpx/" + $_GET["track"] + ".gpx";
+
+                document.getElementById("track").innerHTML = "Track URL: <code>" + url + "</code>";
+
+                s_params = "<ul>"
+                for ([key, value] of Object.entries($_GET)) {
+                    if (key != "track") {
+                        s_params += "<li>" + key + ": " + value + "</li>";
+                    }
+                }
+                s_params = s_params + "</ul>";
+                document.getElementById("params").innerHTML = s_params;
+
+                var gpx_o = load_gpx(url);
+            }
+        </script>
+    </head>
+    <body onload="fill_elements()">
+        <h1>Suivi de coureur sur une trace GPX (HTML/JS only)</h1>
+
+        <p id="track"></p>
+        <p id="params"></p>
+    </body>
+</html>
