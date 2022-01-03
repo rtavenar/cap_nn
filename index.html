@@ -2,33 +2,15 @@
     <head>
         <meta charset="UTF-8" />
         <script src="js/main.js"></script>
-        <!-- <script type="text/javascript"
-            src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js">
-        </script> -->
         <script src="js/GPXParser.min.js"></script>
         <script type="text/javascript">
-            // function load_gpx(filename) {
-            //     // Create an XMLHttpRequest object
-            //     const xhttp = new XMLHttpRequest();
-
-            //     // Send a request
-            //     xhttp.open("GET", filename);
-            //     xhttp.send();
-            //     var txt = "<xml>" + xhttp.responseText + "</xml>";
-            //     var parser = new GPXParser(txt);
-            //     return parser;
-            // }
             function load_gpx(filename) {
                 const xhttp = new XMLHttpRequest();
-
-                // Send a request
-                xhttp.open("GET", filename);
+                xhttp.open("GET", filename, false);
                 xhttp.send();
-                var s_gpx = "<xml>" + xhttp.responseText + "</xml>";
 
                 var gpx = new gpxParser(); //Create gpxParser Object
-                gpx.parse(s_gpx);
-                // var parser = new GPXParser(txt);
+                gpx.parse(xhttp.responseText);
                 return gpx;
             }
 
@@ -39,17 +21,23 @@
 
                 document.getElementById("track").innerHTML = "Track URL: <code>" + url + "</code>";
 
-                s_params = "<ul>"
+                var s_params = "<ul>"
                 for ([key, value] of Object.entries($_GET)) {
                     if (key != "track") {
                         s_params += "<li>" + key + ": " + value + "</li>";
                     }
                 }
-                s_params = s_params + "</ul>";
+                s_params += "</ul>";
                 document.getElementById("params").innerHTML = s_params;
 
                 var gpx_o = load_gpx(url);
-                console.log(gpx_o);
+                
+                var s_tracks = "<h2>List of tracks</h2><ul>"
+                for (const track of gpx_o.tracks) {
+                    s_tracks += "<li>" + track.name + ": " + (track.distance.total / 1000) + "km</li>";
+                }
+                s_tracks += "</ul>";
+                document.getElementById("found_tracks").innerHTML = s_tracks;
             }
         </script>
     </head>
@@ -58,5 +46,6 @@
 
         <p id="track"></p>
         <p id="params"></p>
+        <p id="found_tracks"></p>
     </body>
 </html>
