@@ -48,7 +48,7 @@
                     var elapsed_m = Math.floor(elapsed / 60) % 60;
                     var elapsed_s = elapsed % 60;
                     console.log(Date.now());
-                    document.getElementById("temps_ecoule").innerHTML = (elapsed_sec % 60) + "s"
+                    document.getElementById("temps_ecoule").innerHTML = elapsed_h + "h " + elapsed_m + "m " + elapsed_s + "s";
                 }
             }
         </script>
