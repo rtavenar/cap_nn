@@ -29,3 +29,21 @@ function distance_covered(lat, lon, gpx_track) {
     var i = nearest_point_in_track(lat, lon, gpx_track.points);
     return gpx_track.distance.cumul[i];
 }
+
+function distance_covered_first_half(lat, lon, gpx_track) {
+    var half = gpx_track.points.length;
+    var i = nearest_point_in_track(lat, lon, gpx_track.points.slice(0, half));
+    return gpx_track.distance.cumul[i];
+}
+
+function distance_covered_second_half(lat, lon, gpx_track) {
+    var half = gpx_track.points.length;
+    var i = nearest_point_in_track(lat, lon, gpx_track.points.slice(half));
+    return gpx_track.distance.cumul[i];
+}
+
+function valid_get_args($_GET) {
+    var keys = Object.keys($_GET);
+    return keys.includes("lat") && keys.includes("lon") && keys.includes("track");
+    // TODO: test if GPX file exists, test if all params have valid values...
+}
