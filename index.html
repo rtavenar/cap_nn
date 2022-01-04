@@ -23,24 +23,44 @@
                         " : vous devez passer les arguments <code>lat</code>, <code>lon</code> et <code>track</code>";
                     return;
                 }
-
                 var url = "gpx/" + $_GET["track"] + ".gpx";
+                var track_id = 0;   // TODO: could be passed as arg maybe?
+                
+                document.getElementById("title").innerHTML = "Suivi de coureur sur la trace <code>" + url + "</code>";
+
                 var gpx_o = load_gpx(url);
                 
-                var s_tracks = "<h2>Tracks trouvées dans <code>" + url + "</code></h2><ul>";
-                for (const track of gpx_o.tracks) {
-                    s_tracks += "<li>" + track.name + ": " + Math.round(track.distance.total / 1000) + "km";
-                    s_tracks += "<ul><li>Distance parcourue (optimiste): " + Math.round(distance_covered_second_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km</li>";
-                    s_tracks += "<li>Distance parcourue (pessimiste): " + Math.round(distance_covered_first_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km</li></ul></li>";
-                }
-                s_tracks += "</ul>";
-                document.getElementById("found_tracks").innerHTML = s_tracks;
+                const track = gpx_o.tracks[0];
+
+                document.getElementById("track_name").innerHTML = track.name;
+                document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)"
+                
+                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(distance_covered_second_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km"
+                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(distance_covered_first_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km"
             }
         </script>
     </head>
     <body onload="fill_elements()">
         <h1 id="title"></h1>
 
-        <p id="found_tracks"></p>
+        <div id="found_tracks">
+            <h2>Track: <span id="track_name"></span> <span id="track_length"></span></h2>
+
+            <h3>Version optimiste (les coureurs ont dépassé la mi-course)</h3>
+
+            <ul>
+                <li>Temps écoulé: <span id="opt_temps_ecoule"></span></li>
+                <li>Distance parcourue: <span id="opt_dist_parcourue"></span></li>
+                <li>Temps restant (estimé): <span id="opt_temps_restant"></span></li>
+            </ul>
+
+            <h3>Version pessimiste (les coureurs sont encore dans la première moitié de course)</h3>
+
+            <ul>
+                <li>Temps écoulé: <span id="pess_temps_ecoule"></span></li>
+                <li>Distance parcourue: <span id="pess_dist_parcourue"></span></li>
+                <li>Temps restant (estimé): <span id="pess_temps_restant"></span></li>
+            </ul>
+        </div>
     </body>
 </html>
