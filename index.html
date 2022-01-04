@@ -46,13 +46,13 @@
                     }
                 } else {
                     var elapsed = (Date.now() - $_GET["start_timestamp"]) / 1000;
-                    document.getElementById("temps_ecoule").innerHTML = elapsed_to_string(elapsed);
+                    document.getElementById("temps_ecoule").innerHTML = time_to_string(elapsed);
 
                     var expected_remaining_time_opt = elapsed * (track.distance.total - d_opt) / d_opt;
                     var expected_remaining_time_pess = elapsed * (track.distance.total - d_pess) / d_pess;
 
-                    document.getElementById("opt_temps_restant").innerHTML = elapsed_to_string(expected_remaining_time_opt);
-                    document.getElementById("pess_temps_restant").innerHTML = elapsed_to_string(expected_remaining_time_pess);
+                    document.getElementById("opt_temps_restant").innerHTML = time_to_string(expected_remaining_time_opt);
+                    document.getElementById("pess_temps_restant").innerHTML = time_to_string(expected_remaining_time_pess);
                 }
             }
         </script>

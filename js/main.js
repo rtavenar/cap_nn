@@ -48,7 +48,7 @@ function valid_get_args($_GET) {
     // TODO: test if GPX file exists, test if all params have valid values...
 }
 
-function elapsed_time_to_string(elapsed) {
+function time_to_string(elapsed) {
     var elapsed_h = Math.floor(elapsed / 3600);
     var elapsed_m = Math.floor(elapsed / 60) % 60;
     var elapsed_s = Math.round(elapsed % 60);
