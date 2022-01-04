@@ -33,10 +33,18 @@
                 const track = gpx_o.tracks[0];
 
                 document.getElementById("track_name").innerHTML = track.name;
-                document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)"
+                document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)";
                 
-                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(distance_covered_second_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km"
-                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(distance_covered_first_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km"
+                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(distance_covered_second_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km";
+                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(distance_covered_first_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km";
+
+                if (!Object.keys($_GET).includes("start_timestamp")) {
+                    for (span_id of Array("temps_ecoule", "opt_temps_restant", "pess_temps_restant")) {
+                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>start_timestamp</code> non fournie)";
+                    }
+                } else {
+
+                }
             }
         </script>
     </head>
@@ -46,10 +54,11 @@
         <div id="found_tracks">
             <h2>Track: <span id="track_name"></span> <span id="track_length"></span></h2>
 
+            <p>Temps écoulé: <span id="temps_ecoule"></span></p>
+
             <h3>Version optimiste (les coureurs ont dépassé la mi-course)</h3>
 
             <ul>
-                <li>Temps écoulé: <span id="opt_temps_ecoule"></span></li>
                 <li>Distance parcourue: <span id="opt_dist_parcourue"></span></li>
                 <li>Temps restant (estimé): <span id="opt_temps_restant"></span></li>
             </ul>
@@ -57,7 +66,6 @@
             <h3>Version pessimiste (les coureurs sont encore dans la première moitié de course)</h3>
 
             <ul>
-                <li>Temps écoulé: <span id="pess_temps_ecoule"></span></li>
                 <li>Distance parcourue: <span id="pess_dist_parcourue"></span></li>
                 <li>Temps restant (estimé): <span id="pess_temps_restant"></span></li>
             </ul>
