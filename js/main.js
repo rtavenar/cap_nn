@@ -16,7 +16,7 @@ function nearest_point_in_track(lat, lon, array_of_points) {
     var arg_min = -1;
     for (var i=0; i<array_of_points.length; ++i) {
         var p = array_of_points[i];
-        var dist = (p["lat"] - lat) ** 2 + (p["lon"] - lon) ** 2;
+        var dist = (p.lat - lat) ** 2 + (p.lon - lon) ** 2;
         if (dist < min_dist) {
             min_dist = dist;
             arg_min = i;
@@ -25,6 +25,6 @@ function nearest_point_in_track(lat, lon, array_of_points) {
     return i;
 }
 
-function distance_covered(lat, lon, gpx_o) {
-    return gpx_o["distance"]["cumul"][nearest_point_in_track(lat, lon, gpx_o["points"])];
+function distance_covered(lat, lon, gpx_track) {
+    return gpx_track.distance.cumul[nearest_point_in_track(lat, lon, gpx_track.points)];
 }
