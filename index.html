@@ -43,10 +43,10 @@
                         document.getElementById(span_id).innerHTML = "NaN (heure de début <code>start_timestamp</code> non fournie)";
                     }
                 } else {
-                    var elapsed = Date.now() - $_GET["start_timestamp"] / 1000;
+                    var elapsed = (Date.now() - $_GET["start_timestamp"]) / 1000;
                     var elapsed_h = Math.floor(elapsed / 3600);
                     var elapsed_m = Math.floor(elapsed / 60) % 60;
-                    var elapsed_s = elapsed % 60;
+                    var elapsed_s = Math.round(elapsed % 60);
                     console.log(Date.now());
                     document.getElementById("temps_ecoule").innerHTML = elapsed_h + "h " + elapsed_m + "m " + elapsed_s + "s";
                 }
