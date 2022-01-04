@@ -25,16 +25,6 @@
                 }
 
                 var url = "gpx/" + $_GET["track"] + ".gpx";
-
-                var s_params = "<ul>"
-                for ([key, value] of Object.entries($_GET)) {
-                    if (key != "track") {
-                        s_params += "<li>" + key + ": " + value + "</li>";
-                    }
-                }
-                s_params += "</ul>";
-                document.getElementById("params").innerHTML = s_params;
-
                 var gpx_o = load_gpx(url);
                 
                 var s_tracks = "<h2>Tracks trouvées dans <code>" + url + "</code></h2><ul>";
