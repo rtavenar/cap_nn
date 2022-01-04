@@ -26,5 +26,5 @@ function nearest_point_in_track(lat, lon, array_of_points) {
 }
 
 function distance_covered(lat, lon, gpx_o) {
-    return gpx_o.distance["cumul"][nearest_point_in_track(lat, lon, gpx_o["points"])];
+    return gpx_o["distance"]["cumul"][nearest_point_in_track(lat, lon, gpx_o["points"])];
 }
