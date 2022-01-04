@@ -47,3 +47,11 @@ function valid_get_args($_GET) {
     return keys.includes("lat") && keys.includes("lon") && keys.includes("track");
     // TODO: test if GPX file exists, test if all params have valid values...
 }
+
+function elapsed_time_to_string(elapsed) {
+    var elapsed_h = Math.floor(elapsed / 3600);
+    var elapsed_m = Math.floor(elapsed / 60) % 60;
+    var elapsed_s = Math.round(elapsed % 60);
+
+    return elapsed_h + "h " + elapsed_m + "m " + elapsed_s + "s";
+}

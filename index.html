@@ -35,10 +35,10 @@
                 document.getElementById("track_name").innerHTML = track.name;
                 document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)";
                 
-                d_opt = Math.round(distance_covered_second_half($_GET["lat"], $_GET["lon"], track) / 1000);
-                d_pess = Math.round(distance_covered_first_half($_GET["lat"], $_GET["lon"], track) / 1000);
-                document.getElementById("opt_dist_parcourue").innerHTML = d_opt + "km";
-                document.getElementById("pess_dist_parcourue").innerHTML = d_pess + "km";
+                d_opt = distance_covered_second_half($_GET["lat"], $_GET["lon"], track);
+                d_pess = distance_covered_first_half($_GET["lat"], $_GET["lon"], track);
+                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(d_opt / 1000) + "km";
+                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(d_pess / 1000) + "km";
 
                 if (!Object.keys($_GET).includes("start_timestamp")) {
                     for (span_id of Array("temps_ecoule", "opt_temps_restant", "pess_temps_restant")) {
@@ -46,12 +46,13 @@
                     }
                 } else {
                     var elapsed = (Date.now() - $_GET["start_timestamp"]) / 1000;
-                    var elapsed_h = Math.floor(elapsed / 3600);
-                    var elapsed_m = Math.floor(elapsed / 60) % 60;
-                    var elapsed_s = Math.round(elapsed % 60);
-                    console.log(Date(Date.now()));
-                    console.log(Date($_GET["start_timestamp"]));
-                    document.getElementById("temps_ecoule").innerHTML = elapsed_h + "h " + elapsed_m + "m " + elapsed_s + "s";
+                    document.getElementById("temps_ecoule").innerHTML = elapsed_to_string(elapsed);
+
+                    var expected_remaining_time_opt = elapsed * (track.distance.total - d_opt) / d_opt;
+                    var expected_remaining_time_pess = elapsed * (track.distance.total - d_pess) / d_pess;
+
+                    document.getElementById("opt_temps_restant").innerHTML = elapsed_to_string(expected_remaining_time_opt);
+                    document.getElementById("pess_temps_restant").innerHTML = elapsed_to_string(expected_remaining_time_pess);
                 }
             }
         </script>
