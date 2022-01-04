@@ -16,7 +16,7 @@ function nearest_point_in_track(lat, lon, array_of_points) {
     var arg_min = -1;
     for (var i=0; i<array_of_points.length; ++i) {
         var p = array_of_points[i];
-        var dist = (p.lat - lat) ** 2 + (p.lon - lon) ** 2;
+        var dist = (p["lat"] - lat) ** 2 + (p["lon"] - lon) ** 2;
         if (dist < min_dist) {
             min_dist = dist;
             arg_min = i;
