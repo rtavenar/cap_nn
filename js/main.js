@@ -31,15 +31,15 @@ function distance_covered(lat, lon, gpx_track) {
 }
 
 function distance_covered_first_half(lat, lon, gpx_track) {
-    var half = gpx_track.points.length;
+    var half = Math.floor(gpx_track.points.length / 2);
     var i = nearest_point_in_track(lat, lon, gpx_track.points.slice(0, half));
     return gpx_track.distance.cumul[i];
 }
 
 function distance_covered_second_half(lat, lon, gpx_track) {
-    var half = gpx_track.points.length;
+    var half = Math.floor(gpx_track.points.length / 2);
     var i = nearest_point_in_track(lat, lon, gpx_track.points.slice(half));
-    return gpx_track.distance.cumul[i];
+    return gpx_track.distance.cumul[half + i];
 }
 
 function valid_get_args($_GET) {
