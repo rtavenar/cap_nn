@@ -35,8 +35,10 @@
                 document.getElementById("track_name").innerHTML = track.name;
                 document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)";
                 
-                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(distance_covered_second_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km";
-                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(distance_covered_first_half($_GET["lat"], $_GET["lon"], track) / 1000) + "km";
+                d_opt = Math.round(distance_covered_second_half($_GET["lat"], $_GET["lon"], track) / 1000);
+                d_pess = Math.round(distance_covered_first_half($_GET["lat"], $_GET["lon"], track) / 1000);
+                document.getElementById("opt_dist_parcourue").innerHTML = d_opt + "km";
+                document.getElementById("pess_dist_parcourue").innerHTML = d_pess + "km";
 
                 if (!Object.keys($_GET).includes("start_timestamp")) {
                     for (span_id of Array("temps_ecoule", "opt_temps_restant", "pess_temps_restant")) {
@@ -47,7 +49,8 @@
                     var elapsed_h = Math.floor(elapsed / 3600);
                     var elapsed_m = Math.floor(elapsed / 60) % 60;
                     var elapsed_s = Math.round(elapsed % 60);
-                    console.log(Date.now());
+                    console.log(Date(Date.now()));
+                    console.log(Date($_GET["start_timestamp"]));
                     document.getElementById("temps_ecoule").innerHTML = elapsed_h + "h " + elapsed_m + "m " + elapsed_s + "s";
                 }
             }
