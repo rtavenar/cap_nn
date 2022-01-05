@@ -41,6 +41,18 @@
                 L.marker([$_GET["lat"], $_GET["lon"]]).addTo(mymap)
             }
 
+            function guess_timestamp(s) {
+                if (-1 !== s.indexOf('T')) {
+                    return Date.parse(s)
+                }
+                let v = parseInt(s)
+                if (v < 30000000000) { // before end of 1970, so we probably receive sec and not ms
+                    return 1000*v
+                } else {
+                    return v
+                }
+            }
+
             function fill_elements() {
                 // get query arguments            
                 var $_GET = parse_args();
@@ -70,19 +82,26 @@
                 document.getElementById("opt_dist_parcourue").innerHTML = Math.round(d_opt / 1000) + "km";
                 document.getElementById("pess_dist_parcourue").innerHTML = Math.round(d_pess / 1000) + "km";
 
-                if (!Object.keys($_GET).includes("start_timestamp")) {
-                    for (span_id of Array("temps_ecoule", "opt_temps_restant", "pess_temps_restant")) {
-                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>start_timestamp</code> non fournie)";
+                // we receive at and possibly start
+                // (for each, there is an automatic guess between ms epoch, sec epoch, or ISO date)
+                if (!("start" in $_GET)) {
+                    for (span_id of ["temps_ecoule", "opt_temps_restant", "pess_temps_restant"]) {
+                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>start</code> non fournie)";
+                    }
+                } else if (!("at" in $_GET)) {
+                    for (span_id of ["temps_ecoule", "opt_temps_restant", "pess_temps_restant"]) {
+                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>at</code> non fournie)";
                     }
                 } else {
-                    var cur_date = Object.keys($_GET).includes("current_timestamp") ? $_GET["current_timestamp"] : Date.now();
-                    var elapsed = (cur_date - $_GET["start_timestamp"]) / 1000;
+                    let cur_date = guess_timestamp($_GET["at"]) / 1000; // in sec
+                    let start_date = guess_timestamp($_GET["start"]) / 1000;
+                    let elapsed = cur_date - start_date;
                     document.getElementById("temps_ecoule").innerHTML = time_to_string(elapsed);
 
-                    var expected_remaining_time_opt = elapsed * (track.distance.total - d_opt) / d_opt;
+                    let expected_remaining_time_opt = elapsed * (track.distance.total - d_opt) / d_opt;
                     document.getElementById("opt_temps_restant").innerHTML = time_to_string(expected_remaining_time_opt);
 
-                    var expected_remaining_time_pess = elapsed * (track.distance.total - d_pess) / d_pess;
+                    let expected_remaining_time_pess = elapsed * (track.distance.total - d_pess) / d_pess;
                     document.getElementById("pess_temps_restant").innerHTML = time_to_string(expected_remaining_time_pess);
                 }
 
