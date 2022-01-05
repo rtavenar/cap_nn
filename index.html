@@ -48,7 +48,8 @@
                 if (!valid_get_args($_GET)) {
                     document.getElementById("title").innerHTML = "Suivi de coureur sur une trace GPX (HTML/JS only)";
                     document.getElementById("warning").innerHTML = "Vous devez passer les arguments <code>lat</code>, <code>lon</code> et <code>track</code>.<br />" +
-                        "Exemple d'URL valide : <code>https://rtavenar.github.io/cap_nn/index.html?track=migoual-concept-race&lat=44.10433&lon=3.53856&start_timestamp=1641306320507&amp;current_timestamp=1641336134388</code>";
+                        "Exemple d'URL valide : <br/><code>"+window.location+"?track=migoual-concept-race&lat=44.10433&lon=3.53856&start_timestamp=1641306320507&amp;current_timestamp=1641336134388</code> <br/>"
+                        ;
                     return;
                 }
                 var url = "gpx/" + $_GET["track"] + ".gpx";
