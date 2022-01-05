@@ -66,13 +66,13 @@
                     return;
                 }
                 var url = "gpx/" + $_GET["track"] + ".gpx";
-                var track_id = 0;   // TODO: could be passed as arg maybe?
+                const track_id = $_GET["trkid"] ?? 0;
                 
                 document.getElementById("title").innerHTML = "Suivi de coureur sur la trace <code>" + url + "</code>";
 
                 var gpx_o = load_gpx(url);
                 
-                const track = gpx_o.tracks[0];
+                const track = gpx_o.tracks[track_id];
 
                 document.getElementById("track_name").innerHTML = track.name;
                 document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)";
