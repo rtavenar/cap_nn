@@ -38,6 +38,8 @@
                 mymap.fitBounds(polyline.getBounds());
 
                 L.marker([$_GET["lat"], $_GET["lon"]]).addTo(mymap)
+                    .bindPopup("<img src='img/icon.png' />")
+                    .openPopup();
             }
 
             function fill_elements() {
@@ -112,7 +114,7 @@
             </ul>
         </div>
 
-        <div id="map" style="height:180px;"></div>
+        <div id="map" style="height:10em;"></div>
 
     </body>
 </html>
