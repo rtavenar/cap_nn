@@ -36,7 +36,7 @@
                 // zoom the map to the polyline
                 mymap.fitBounds(polyline.getBounds());
 
-                L.marker([$_GET["lat"], $_GET["lon"]]).addTo(map)
+                L.marker([$_GET["lat"], $_GET["lon"]]).addTo(mymap)
             }
 
             function fill_elements() {
