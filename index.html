@@ -82,7 +82,7 @@
                 document.getElementById("opt_dist_parcourue").innerHTML = Math.round(d_opt / 1000) + "km";
                 document.getElementById("pess_dist_parcourue").innerHTML = Math.round(d_pess / 1000) + "km";
 
-                // we receive at and possibly start
+                // we receive at and start
                 // (for each, there is an automatic guess between ms epoch, sec epoch, or ISO date)
                 if (!("start" in $_GET)) {
                     for (span_id of ["temps_ecoule", "opt_temps_restant", "pess_temps_restant"]) {
