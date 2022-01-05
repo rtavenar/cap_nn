@@ -20,7 +20,7 @@
                 return gpx;
             }
 
-            function draw_map($_GET, gpx_track) {  // TODO: track only?
+            function draw_map($_GET, gpx_track) {
                 let mymap = L.map('map');
 
                 L.tileLayer(
@@ -31,10 +31,12 @@
                     }
                 ).addTo(mymap);
 
-                let coordinates = track.points.map(p => [p.lat.toFixed(5), p.lon.toFixed(5)]);
+                let coordinates = gpx_track.points.map(p => [p.lat.toFixed(5), p.lon.toFixed(5)]);
                 var polyline = L.polyline(coordinates, { weight: 6, color: 'darkred' }).addTo(mymap);
                 // zoom the map to the polyline
                 mymap.fitBounds(polyline.getBounds());
+
+                L.marker([$_GET["lat"], $_GET["lon"]]).addTo(map)
             }
 
             function fill_elements() {
