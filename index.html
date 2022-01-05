@@ -3,6 +3,12 @@
         <meta charset="UTF-8" />
         <script src="js/main.js"></script>
         <script src="js/GPXParser.min.js"></script>
+        <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+            integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+            crossorigin=""></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+            integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+            crossorigin="" />
         <script type="text/javascript">
             function load_gpx(filename) {
                 const xhttp = new XMLHttpRequest();
@@ -12,6 +18,23 @@
                 var gpx = new gpxParser(); //Create gpxParser Object
                 gpx.parse(xhttp.responseText);
                 return gpx;
+            }
+
+            function draw_map($_GET, gpx_track) {  // TODO: track only?
+                let mymap = L.map('map');
+
+                L.tileLayer(
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
+                    {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        maxZoom: 50
+                    }
+                ).addTo(mymap);
+
+                let coordinates = track.points.map(p => [p.lat.toFixed(5), p.lon.toFixed(5)]);
+                var polyline = L.polyline(coordinates, { weight: 6, color: 'darkred' }).addTo(mymap);
+                // zoom the map to the polyline
+                mymap.fitBounds(polyline.getBounds());
             }
 
             function fill_elements() {
@@ -56,6 +79,8 @@
                     var expected_remaining_time_pess = elapsed * (track.distance.total - d_pess) / d_pess;
                     document.getElementById("pess_temps_restant").innerHTML = time_to_string(expected_remaining_time_pess);
                 }
+
+                draw_map($_GET, track);
             }
         </script>
     </head>
@@ -83,5 +108,8 @@
                 <li>Temps restant (estimé): <span id="pess_temps_restant"></span></li>
             </ul>
         </div>
+
+        <div id="map"></div>
+
     </body>
 </html>
