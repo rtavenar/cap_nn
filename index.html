@@ -11,7 +11,12 @@
         <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
             integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
             crossorigin=""></script>
+        <style>
+            img.huechange { filter: hue-rotate(150deg); }
+            img.grayscale { filter: grayscale(80%); }
+        </style>
         <script type="text/javascript">
+
             function load_gpx(filename) {
                 const xhttp = new XMLHttpRequest();
                 xhttp.open("GET", filename, false);
@@ -38,7 +43,18 @@
                 // zoom the map to the polyline
                 mymap.fitBounds(polyline.getBounds());
 
-                L.marker([$_GET["lat"], $_GET["lon"]]).addTo(mymap)
+                let start = state.start / 1000;
+                let ts = guess_timestamp($_GET["at"]) / 1000; // query timestamp
+                for (let p of state.points) {
+                    let m = L.marker([p.lat, p.lon], {style:{color: 'red'}}).addTo(mymap);
+                    m.bindTooltip(`
+                    ${new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', )}<br/>
+                    Temps écoulé : ${time_to_string(p.ts - start)}
+                    `);
+                    if (p.ts !== ts) {
+                        m._icon.classList.add("grayscale");
+                    }
+                }
             }
 
             function guess_timestamp(s) {
@@ -52,6 +68,33 @@
                     return v
                 }
             }
+
+            let state = null
+            function Point(ts, lat, lon) {
+                this.ts = ts // s
+                this.lat = lat
+                this.lon = lon
+            }
+            function clear_state() {
+                state = {
+                    start: null, // ms
+                    points: []
+                };
+            }
+            LS_KEY = "cap_nn_state";
+            function load_state_from_local_storage(k=LS_KEY) {
+                let v = localStorage.getItem(k);
+                if (v !== null) {
+                    state = JSON.parse(v);
+                }
+            }
+            function save_state_to_local_storage(k=LS_KEY) {
+                localStorage.setItem(k, JSON.stringify(state));
+            }
+            clear_state();
+            load_state_from_local_storage(LS_KEY);
+
+            console.log(JSON.stringify(state, null, 2))
 
             function fill_elements() {
                 // get query arguments            
@@ -84,17 +127,20 @@
 
                 // we receive at and start
                 // (for each, there is an automatic guess between ms epoch, sec epoch, or ISO date)
-                if (!("start" in $_GET)) {
+                if (!("start" in $_GET) && state.start === null) {
                     for (span_id of ["temps_ecoule", "opt_temps_restant", "pess_temps_restant"]) {
-                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>start</code> non fournie)";
+                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>start</code> non fournie et aucune date dans la section configuration)";
                     }
                 } else if (!("at" in $_GET)) {
                     for (span_id of ["temps_ecoule", "opt_temps_restant", "pess_temps_restant"]) {
                         document.getElementById(span_id).innerHTML = "NaN (heure de début <code>at</code> non fournie)";
                     }
                 } else {
+                    if (!state.start) {
+                        state.start = guess_timestamp($_GET["start"]);
+                    }
                     let cur_date = guess_timestamp($_GET["at"]) / 1000; // in sec
-                    let start_date = guess_timestamp($_GET["start"]) / 1000;
+                    let start_date = state.start / 1000;
                     let elapsed = cur_date - start_date;
                     document.getElementById("temps_ecoule").innerHTML = time_to_string(elapsed);
 
@@ -104,6 +150,13 @@
                     let expected_remaining_time_pess = elapsed * (track.distance.total - d_pess) / d_pess;
                     document.getElementById("pess_temps_restant").innerHTML = time_to_string(expected_remaining_time_pess);
                 }
+
+                // digest the query point, use timestamp as identifier
+                let ts = guess_timestamp($_GET["at"]) / 1000;
+                if (state.points.map(p => p.ts).indexOf(ts) === -1) { // avoid duplicates
+                    state.points.push(new Point(ts, $_GET["lat"], $_GET["lon"]));
+                }
+                save_state_to_local_storage(LS_KEY);
 
                 draw_map($_GET, track);
             }
@@ -136,5 +189,11 @@
 
         <div id="map" style="height:180px;"></div>
 
+        <div id="config">
+            <h3>Information et configuration</h3>
+            <button onclick="clear_state() ; save_state_to_local_storage() ; window.location.reload()">Effacer les points et config</button>
+            <br/>
+            TODO bind Date de début : <input type="datetime-local" oninput="state.start = Date.parse(this.value) ; save_state_to_local_storage() ; window.location.reload()">
+        </div>
     </body>
 </html>
