@@ -14,6 +14,7 @@
         <style>
             img.huechange { filter: hue-rotate(150deg); }
             img.grayscale { filter: grayscale(80%); }
+            #map { resize: both; }
         </style>
         <script type="text/javascript">
 
@@ -29,6 +30,10 @@
 
             function draw_map($_GET, gpx_track) {
                 let mymap = L.map('map');
+                
+                new ResizeObserver(() => {
+                    mymap.invalidateSize();
+                }).observe(document.getElementById('map'));
 
                 L.tileLayer(
                     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
