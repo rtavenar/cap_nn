@@ -44,7 +44,8 @@
                 ).addTo(mymap);
 
                 let coordinates = gpx_track.points.map(p => [p.lat.toFixed(5), p.lon.toFixed(5)]);
-                var polyline = L.polyline(coordinates, { weight: 6, color: 'darkred' }).addTo(mymap);
+                var polyline = L.polyline(coordinates, { weight: 10, color: 'darkred', opacity: 0.5 }).addTo(mymap)
+
                 polyline.on('click', (ev) => {
                     let m = L.marker(ev.latlng).addTo(mymap)
                     m._icon.classList.add('estimate')
@@ -62,7 +63,7 @@
                 let start = state.start / 1000;
                 let ts = guess_timestamp($_GET["at"]) / 1000; // query timestamp
                 for (let p of state.points) {
-                    let m = L.marker([p.lat, p.lon], {style:{color: 'red'}}).addTo(mymap);
+                    let m = L.marker([p.lat, p.lon]).addTo(mymap);
                     m.bindTooltip(`
                     ${new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', )}<br/>
                     Temps écoulé : ${time_to_string(p.ts - start)}
@@ -97,7 +98,7 @@
                     points: []
                 };
             }
-            LS_KEY = "cap_nn_state";
+            LS_KEY = "cap_nn_state"; // should make it URL configurable, and especially should use by default the trackname or an id=
             function load_state_from_local_storage(k=LS_KEY) {
                 let v = localStorage.getItem(k);
                 if (v !== null) {
