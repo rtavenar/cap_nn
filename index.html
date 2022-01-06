@@ -12,7 +12,7 @@
             integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
             crossorigin=""></script>
         <style>
-            img.huechange { filter: hue-rotate(150deg); }
+            img.estimate { filter: hue-rotate(150deg); }
             img.grayscale { filter: grayscale(80%); }
             #map { resize: both; }
         </style>
@@ -45,6 +45,17 @@
 
                 let coordinates = gpx_track.points.map(p => [p.lat.toFixed(5), p.lon.toFixed(5)]);
                 var polyline = L.polyline(coordinates, { weight: 6, color: 'darkred' }).addTo(mymap);
+                polyline.on('click', (ev) => {
+                    let m = L.marker(ev.latlng).addTo(mymap)
+                    m._icon.classList.add('estimate')
+                    m.bindTooltip("TODO estimate")
+                    //m.bindTooltip(estimate_to_html(estimate_progress(ev.latlng))) // TODO
+                    m.on('click', () => {
+                        m.remove()
+                    })
+                });
+
+
                 // zoom the map to the polyline
                 mymap.fitBounds(polyline.getBounds());
 
