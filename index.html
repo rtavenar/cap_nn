@@ -47,12 +47,14 @@
                 var polyline = L.polyline(coordinates, { weight: 10, color: 'darkred', opacity: 0.5 }).addTo(mymap)
 
                 polyline.on('click', (ev) => {
-                    let m = L.marker(ev.latlng).addTo(mymap)
+                    let ll = ev.latlng
+                    let m = L.marker(ll).addTo(mymap)
                     m._icon.classList.add('estimate')
                     m.bindTooltip("TODO estimate")
-                    //m.bindTooltip(estimate_to_html(estimate_progress(ev.latlng))) // TODO
+                    //m.bindTooltip(estimate_to_html(estimate_progress(ll))) // TODO
                     m.on('click', () => {
-                        m.remove()
+                        m.remove();
+                        console.log(`&lat=${ll.lat.toFixed(5)}&lon=${ll.lng.toFixed(5)}&at=`); // helper to create test URLs
                     })
                 });
 
@@ -61,6 +63,7 @@
                 mymap.fitBounds(polyline.getBounds());
 
                 let start = state.start / 1000;
+                let end = Math.max(...state.points.map(p => p.ts))
                 let ts = guess_timestamp($_GET["at"]) / 1000; // query timestamp
                 for (let p of state.points) {
                     let m = L.marker([p.lat, p.lon]).addTo(mymap);
@@ -69,7 +72,10 @@
                     Temps écoulé : ${time_to_string(p.ts - start)}
                     `);
                     if (p.ts !== ts) {
-                        m._icon.classList.add("grayscale");
+                        m._icon.style.filter = `grayscale(${80 - 80*(p.ts-start)/(end-start)}%)`;
+                        //m._icon.style.filter = `hue-rotate(${100 * (p.ts-start)/(end-start)}deg)`;
+                    } else {
+                        m._icon.style.filter = `brightness(150%)`;
                     }
                 }
             }
@@ -126,6 +132,9 @@
                         "<br/><br/>Exemples pour tester le multipoint : <br/>" + [
                             "&lat=44.12433&lon=3.13856&at=2022-01-05T06:33",
                             "&lat=44.10933&lon=3.30856&at=2022-01-05T12:03",
+                            "&lat=44.13056&lon=3.38203&at=2022-01-05T15:55", // lanuejols,
+                            "&lat=44.13078&lon=3.38426&at=2022-01-05T16:23",
+                            "&lat=44.10517&lon=3.51768&at=2022-01-05T21:12",
                             "&lat=44.10433&lon=3.53856&at=2022-01-05T22:03",
                             ]
                             .map(p => baseurl+"?track=migoual-concept-race&start=2022-01-05T06:03"+p)
