@@ -169,10 +169,10 @@
                 document.getElementById("track_name").innerHTML = track.name;
                 document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)";
                 
-                d_opt = distance_covered_second_half($_GET["lat"], $_GET["lon"], track);
-                d_pess = distance_covered_first_half($_GET["lat"], $_GET["lon"], track);
-                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(d_opt / 1000) + "km";
-                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(d_pess / 1000) + "km";
+                let d_opt_final = distance_covered_second_half($_GET["lat"], $_GET["lon"], track);
+                let d_pess_final = distance_covered_first_half($_GET["lat"], $_GET["lon"], track);
+                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(d_opt_final / 1000) + "km";
+                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(d_pess_final / 1000) + "km";
 
                 // we receive at and start
                 // (for each, there is an automatic guess between ms epoch, sec epoch, or ISO date)
@@ -221,7 +221,13 @@
                 s_tab_opt += "<td>" + track.points[0].lon + "</td>"
                 s_tab_opt += "<td>0km</td><td>0km</td></tr>\n"
 
-                for (p of state.points) {
+                let max_dist_first_half = -1;
+
+                for (i=0; i<state.points.length; i++) {
+                    let p = state.points[i];
+                    let pessimistic_is_plausible = true;
+                    let optimistic_is_plausible = true;
+
                     let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
                     let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000;  // km
                     let elapsed = p.ts - state.start / 1000;  // s
@@ -229,16 +235,30 @@
                     let v_opt = d_opt / (elapsed / 3600);
                     let v_pess = d_pess / (elapsed / 3600);
 
+                    if (v_opt > 20) {
+                        optimistic_is_plausible = false;
+                    }
+                    if (d_pess > max_dist_first_half) {
+                        max_dist_first_half = d_pess;
+                    }
+                    if (max_dist_first_half > d_pess + 5) {  // +5 to keep some GPS error margin
+                        pessimistic_is_plausible = false;
+                    }
+
                     s_tab_opt += "<tr>"
                     s_tab_opt += "<td>" + new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + "</td>"
                     s_tab_opt += "<td>" + p.lat + "</td>"
                     s_tab_opt += "<td>" + p.lon + "</td>"
-                    if (v_opt < 20) {
+                    if (optimistic_is_plausible) {
                         s_tab_opt += "<td>" + Math.round(d_opt) + "km (" + v_opt.toFixed(1) + "km/h)</td>"
                     } else {
                         s_tab_opt += "<td></td>"
                     }
-                    s_tab_opt += "<td>" + Math.round(d_pess) + "km (" + v_pess.toFixed(1) + "km/h)</td>"
+                    if (pessimistic_is_plausible) {
+                        s_tab_opt += "<td>" + Math.round(d_pess) + "km (" + v_pess.toFixed(1) + "km/h)</td>"
+                    } else {
+                        s_tab_opt += "<td></td>"
+                    }
                     s_tab_opt += "</tr>\n";
                 }
                 document.getElementById("tab-passages").innerHTML = s_tab_opt;
