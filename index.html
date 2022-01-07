@@ -210,7 +210,7 @@
 
                 let s_tab_opt = "<tr><th>Heure</th><th>Latitude</th><th>Longitude</th><th>Distance (optimiste)</th><th>Distance (pessimiste)</th></tr>\n";
                 s_tab_opt += "<tr>"
-                s_tab_opt += "<td>" + new Date(state.start*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + " (Départ)</td>"
+                s_tab_opt += "<td>" + new Date(state.start).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + " (Départ)</td>"
                 s_tab_opt += "<td>" + track.points[0].lat + "</td>"
                 s_tab_opt += "<td>" + track.points[0].lon + "</td>"
                 s_tab_opt += "<td>0km</td><td>0km</td></tr>\n"
@@ -219,6 +219,7 @@
                     let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
                     let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000;  // km
                     let elapsed = p.ts - state.start;  // s
+                    console.log(p.ts, state.start)
                     let v_opt = d_opt / (elapsed / 3600);
                     let v_pess = d_pess / (elapsed / 3600);
 
