@@ -36,6 +36,8 @@ function Point(ts, lat, lon) {
   this.lon = lon;
 }
 
+let reduceSum = [(a, b) => a + b, 0];
+
 // =============== Vue related ============
 const vueSfcLoaderOptions = {
   moduleCache: {

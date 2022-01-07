@@ -136,7 +136,7 @@ export default Vue.defineComponent({
     async digestURL() {
       let err = "Erreur de paramètres dans l'URL. <br/>";
       const p = getURLParams();
-      if ("track" in p && "lat" in p && "lon" in p && "at" in p) {
+      if ("track" in p) {
         const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
         // We use the gpxURL to allow following several races "at the same time"...
         // We also allow a lskey=... url param to allow following several runners in the same race
@@ -154,16 +154,26 @@ export default Vue.defineComponent({
         }
         this.gpxURL = gpxURL;
         // base parameters
-        // TODO check formats for lat, lon etc
-        {
+        const nbFromTriplet = "lat lon at"
+          .split(" ")
+          .map((k) => k in p)
+          .reduce(...reduceSum);
+        if (nbFromTriplet > 0) {
+          if (nbFromTriplet < 3) {
+            this.statusErrorMessage =
+              err +
+              "Les arguments <code>lat</code>, <code>lon</code>, et <code>at</code> vont ensemble.";
+            return false;
+          }
+          // TODO check formats for lat, lon, ts
           // digest the query point, use timestamp as identifier
           let ts = guessTimestamp(p.at) / 1000;
           if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
             // avoid duplicates
             this.store.points.push(new Point(ts, p.lat, p.lon));
+            // TODO maybe ensure it is sorted at all times
           }
         }
-
         // optional parameters
         if (this.store.startInMilliseconds === null && "start" in p) {
           this.store.startInMilliseconds = guessTimestamp(p.start);
@@ -171,8 +181,7 @@ export default Vue.defineComponent({
         return true;
       } else {
         this.statusErrorMessage =
-          err +
-          "Les arguments <code>lat</code>, <code>lon</code>, <code>track</code> et <code>at</code> sont requis. <br />";
+          err + "L'argument <code>track</code> est requis. <br />";
         return false;
       }
     },
