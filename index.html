@@ -218,7 +218,7 @@
                 for (p of state.points) {
                     let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
                     let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000;  // km
-                    let elapsed = p.ts - state.start;  // s
+                    let elapsed = p.ts - state.start / 1000;  // s
                     console.log(p.ts, state.start)
                     let v_opt = d_opt / (elapsed / 3600);
                     let v_pess = d_pess / (elapsed / 3600);
