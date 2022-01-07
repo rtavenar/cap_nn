@@ -244,13 +244,13 @@
                     let v_opt = d_opt / (elapsed / 3600);
                     let v_pess = d_pess / (elapsed / 3600);
 
-                    if (v_opt > 20 || min_dist_second_half < d_opt - 5) {
+                    if (v_opt > 20 || min_dist_second_half < d_opt - 1) {  // -1 to keep some GPS error margin
                         optimistic_is_plausible = false;
                     }
                     if (d_pess > max_dist_first_half) {
                         max_dist_first_half = d_pess;
                     }
-                    if (max_dist_first_half > d_pess + 5) {  // +5 to keep some GPS error margin
+                    if (max_dist_first_half > d_pess + 1) {  // +1 to keep some GPS error margin
                         pessimistic_is_plausible = false;
                     }
 
