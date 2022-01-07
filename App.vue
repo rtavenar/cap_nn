@@ -1,5 +1,6 @@
 <template>
   <div v-if="status === 'ok'">
+    <page-title :v="gpx.metadata.name ?? 'Suivi Coureur'" />
     <h1>
       Suivi de coureur sur la trace
       <code :title="gpxURL + ': ' + gpx?.metadata.desc">{{

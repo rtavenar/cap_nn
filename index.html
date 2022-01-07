@@ -11,18 +11,17 @@
     <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
     <script src="utils.js"></script>
     <script>
-      const components = {};
-      for (let camel of ["App"]) {
+      const app = Vue.createApp({
+        template: "<App></App>",
+      });
+      for (let camel of "App PageTitle".split(" ")) {
         let dash = camel
           .replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())
           .replace(/^-/, "");
-        components[dash] = asyncComponent(camel + ".vue");
-        components[camel] = components[dash];
+        console.log("... registering", dash, "and", camel);
+        app.component(dash, asyncComponent(camel + ".vue"));
+        app.component(camel, asyncComponent(camel + ".vue"));
       }
-      const app = Vue.createApp({
-        template: "<App></App>",
-        components,
-      });
       app.mount("#app");
     </script>
   </body>
