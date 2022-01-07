@@ -18,6 +18,11 @@
                 resize: both; 
                 height:10em;
             }
+
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
         </style>
         <script type="text/javascript">
 
@@ -203,9 +208,15 @@
                     return a.ts - b.ts;
                 });
 
-                let s_tab_opt = "<tr><th>Heure</th><th>Lat</th><th>Lon</th></tr>\n";
+                let s_tab_opt = "<tr><th>Heure</th><th>Latitude</th><th>Longitude</th><th>Distance (optimiste)</th><th>Distance (pessimiste)</th></tr>\n";
                 for (p of state.points) {
-                    s_tab_opt += "<tr><td>" + p.ts + "</td><td>" + p.lat + "</td><td>" + p.lon + "</td></tr>\n";
+                    s_tab_opt += "<tr>"
+                    s_tab_opt += "<td>" + new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + "</td>"
+                    s_tab_opt += "<td>" + p.lat + "</td>"
+                    s_tab_opt += "<td>" + p.lon + "</td>"
+                    s_tab_opt += "<td>" + distance_covered_second_half(p.lat, p.lon, track) + "</td>"
+                    s_tab_opt += "<td>" + distance_covered_first_half(p.lat, p.lon, track) + "</td>"
+                    s_tab_opt += "</tr>\n";
                 }
                 document.getElementById("tab-opt").innerHTML = s_tab_opt;
             }
