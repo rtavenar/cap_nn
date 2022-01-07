@@ -219,7 +219,7 @@
                 s_tab_opt += "<td>" + new Date(state.start).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + " (Départ)</td>"
                 s_tab_opt += "<td>" + track.points[0].lat + "</td>"
                 s_tab_opt += "<td>" + track.points[0].lon + "</td>"
-                s_tab_opt += "<td>0km</td><td>0km</td></tr>\n"
+                s_tab_opt += "<td class='empty'></td><td class='empty'></td></tr>\n"
 
                 let max_dist_first_half = -1;
                 let min_dist_second_half = Infinity;
@@ -239,6 +239,8 @@
 
                     let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
                     let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000;  // km
+                    let deniv_opt = cumul_dplus_second_half(p.lat, p.lon, track);
+                    let deniv_pess = cumul_dplus_first_half(p.lat, p.lon, track);
                     let elapsed = p.ts - state.start / 1000;  // s
                     
                     let v_opt = d_opt / (elapsed / 3600);
@@ -259,14 +261,14 @@
                     s_tab_opt += "<td>" + p.lat + "</td>"
                     s_tab_opt += "<td>" + p.lon + "</td>"
                     if (optimistic_is_plausible) {
-                        s_tab_opt += "<td>" + Math.round(d_opt) + "km (" + v_opt.toFixed(1) + "km/h)</td>"
+                        s_tab_opt += "<td>" + Math.round(d_opt) + "km, " + deniv_opt + "m D+ (" + v_opt.toFixed(1) + "km/h)</td>"
                     } else {
-                        s_tab_opt += "<td></td>"
+                        s_tab_opt += "<td class='empty'></td>"
                     }
                     if (pessimistic_is_plausible) {
-                        s_tab_opt += "<td>" + Math.round(d_pess) + "km (" + v_pess.toFixed(1) + "km/h)</td>"
+                        s_tab_opt += "<td>" + Math.round(d_pess) + "km, " + deniv_pess + "m D+ (" + v_pess.toFixed(1) + "km/h)</td>"
                     } else {
-                        s_tab_opt += "<td></td>"
+                        s_tab_opt += "<td class='empty'></td>"
                     }
                     s_tab_opt += "</tr>\n";
                 }

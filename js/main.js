@@ -25,9 +25,31 @@ function nearest_point_in_track(lat, lon, array_of_points) {
     return arg_min;
 }
 
+function compute_dplus_cumul(gpx_track) {
+    gpx_track.dplus_cumul = [0];
+    for (i=1; i<gpx_track.points.length; i++) {
+        let p_prev = gpx_track.points[i - 1];
+        let p = gpx_track.points[i];
+
+        if (p.ele > p_prev.ele) {
+            gpx_track.dplus_cumul.push(gpx_track.dplus_cumul[i - 1] + p.ele - p_prev.ele)
+        } else {
+            gpx_track.dplus_cumul.push(gpx_track.dplus_cumul[i - 1])
+        }
+    }
+}
+
 function distance_covered(lat, lon, gpx_track) {
     var i = nearest_point_in_track(lat, lon, gpx_track.points);
     return gpx_track.distance.cumul[i];
+}
+
+function cumul_dplus(lat, lon, gpx_track) {
+    if (!Object.keys(gpx_track).includes("dplus")) {
+        compute_dplus_cumul(gpx_track);
+    }
+    var i = nearest_point_in_track(lat, lon, gpx_track.points);
+    return gpx_track.dplus_cumul[i];
 }
 
 function distance_covered_first_half(lat, lon, gpx_track) {
@@ -40,6 +62,24 @@ function distance_covered_second_half(lat, lon, gpx_track) {
     var half = Math.floor(gpx_track.points.length / 2);
     var i = nearest_point_in_track(lat, lon, gpx_track.points.slice(half));
     return gpx_track.distance.cumul[half + i];
+}
+
+function cumul_dplus_first_half(lat, lon, gpx_track) {
+    if (!Object.keys(gpx_track).includes("dplus")) {
+        compute_dplus_cumul(gpx_track);
+    }
+    var half = Math.floor(gpx_track.points.length / 2);
+    var i = nearest_point_in_track(lat, lon, gpx_track.points.slice(0, half));
+    return gpx_track.dplus_cumul[i];
+}
+
+function cumul_dplus_second_half(lat, lon, gpx_track) {
+    if (!Object.keys(gpx_track).includes("dplus")) {
+        compute_dplus_cumul(gpx_track);
+    }
+    var half = Math.floor(gpx_track.points.length / 2);
+    var i = nearest_point_in_track(lat, lon, gpx_track.points.slice(half));
+    return gpx_track.dplus_cumul[half + i];
 }
 
 function valid_get_args($_GET) {
