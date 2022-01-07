@@ -1,11 +1,17 @@
 <template>
   <div v-if="status === 'ok'">
-    <page-title :v="gpx.metadata.name ?? 'Suivi Coureur'" />
+    <page-title
+      :v="
+        (LSKey !== gpxURL ? '(' + LSKey + ') ' : '') +
+        (gpx.metadata.name ?? 'Suivi Coureur')
+      "
+    />
     <h1>
       Suivi de coureur sur la trace
       <code :title="gpxURL + ': ' + gpx?.metadata.desc">{{
         gpx.metadata.name ?? gpxURL
       }}</code>
+      <span v-if="LSKey !== gpxURL"> ({{ LSKey }})</span>
     </h1>
 
     <div id="found_tracks">
