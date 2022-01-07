@@ -222,11 +222,18 @@
                 s_tab_opt += "<td>0km</td><td>0km</td></tr>\n"
 
                 let max_dist_first_half = -1;
+                let min_dist_second_half = Infinity;
+                for (i=0; i<state.points.length; i++) {
+                    let p = state.points[i];
+
+                    let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
+                    if (d_opt < min_dist_second_half) {
+                        min_dist_second_half = d_opt;
+                    }
+                }
 
                 for (i=0; i<state.points.length; i++) {
                     let p = state.points[i];
-                    let pessimistic_is_plausible = true;
-                    let optimistic_is_plausible = true;
 
                     let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
                     let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000;  // km
@@ -235,26 +242,26 @@
                     let v_opt = d_opt / (elapsed / 3600);
                     let v_pess = d_pess / (elapsed / 3600);
 
-                    if (v_opt > 20) {
-                        optimistic_is_plausible = false;
+                    if (v_opt > 20 || min_dist_second_half < d_opt - 5) {
+                        optimistic_is_plausible[i] = false;
                     }
                     if (d_pess > max_dist_first_half) {
                         max_dist_first_half = d_pess;
                     }
                     if (max_dist_first_half > d_pess + 5) {  // +5 to keep some GPS error margin
-                        pessimistic_is_plausible = false;
+                        pessimistic_is_plausible[i] = false;
                     }
 
                     s_tab_opt += "<tr>"
                     s_tab_opt += "<td>" + new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + "</td>"
                     s_tab_opt += "<td>" + p.lat + "</td>"
                     s_tab_opt += "<td>" + p.lon + "</td>"
-                    if (optimistic_is_plausible) {
+                    if (optimistic_is_plausible[i]) {
                         s_tab_opt += "<td>" + Math.round(d_opt) + "km (" + v_opt.toFixed(1) + "km/h)</td>"
                     } else {
                         s_tab_opt += "<td></td>"
                     }
-                    if (pessimistic_is_plausible) {
+                    if (pessimistic_is_plausible[i]) {
                         s_tab_opt += "<td>" + Math.round(d_pess) + "km (" + v_pess.toFixed(1) + "km/h)</td>"
                     } else {
                         s_tab_opt += "<td></td>"
