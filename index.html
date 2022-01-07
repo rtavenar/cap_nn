@@ -193,10 +193,10 @@
                     let elapsed = cur_date - start_date;
                     document.getElementById("temps_ecoule").innerHTML = time_to_string(elapsed);
 
-                    let expected_remaining_time_opt = elapsed * (track.distance.total - d_opt) / d_opt;
+                    let expected_remaining_time_opt = elapsed * (track.distance.total - d_opt_final) / d_opt_final;
                     document.getElementById("opt_temps_restant").innerHTML = time_to_string(expected_remaining_time_opt);
 
-                    let expected_remaining_time_pess = elapsed * (track.distance.total - d_pess) / d_pess;
+                    let expected_remaining_time_pess = elapsed * (track.distance.total - d_pess_final) / d_pess_final;
                     document.getElementById("pess_temps_restant").innerHTML = time_to_string(expected_remaining_time_pess);
                 }
 
