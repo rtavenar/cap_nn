@@ -1,7 +1,8 @@
 <template>
   <div v-if="status === 'ok'">
-    <h1>Suivi de coureur sur une trace GPX (HTML/JS only)</h1>
-    <p id="warning"></p>
+    <h1>
+      Suivi de coureur sur la trace <code>{{ gpxURL }}</code>
+    </h1>
 
     <div id="found_tracks">
       <h2><span id="track_name"></span> <span id="track_length"></span></h2>
@@ -24,8 +25,13 @@
       <code>{{ niceTimestamp(start) }}</code>
     </div>
   </div>
-  <div v-else-if="status === 'loading'">Loading... please wait.</div>
+  <div v-else-if="status === 'loading'">
+    <h1>Suivi de coureur sur une trace GPX (HTML/JS only)</h1>
+    Loading... please wait.
+  </div>
   <div v-else-if="status === 'error'">
+    <h1>ERREUR dans le suivi de coureur sur une trace GPX (HTML/JS only)</h1>
+    <p id="warning"></p>
     <div v-html="statusErrorMessage"></div>
     <hr />
     Exemple de config SMS : <br /><code
@@ -50,9 +56,11 @@ export default Vue.defineComponent({
   data: () => ({
     status: "none",
     statusErrorMessage: "Unknown error",
+    gpxURL: null,
+    gpx: null, // TODO check, it might be a performance issue to have the whole gpx reactive
     store: {
       points: [],
-      startInMilliseconds: Date.now(), // ms
+      startInMilliseconds: null, // ms
     },
     baseURL,
     testUrlsToShowOnError: [
@@ -86,20 +94,61 @@ export default Vue.defineComponent({
     },
   },
   mounted() {
+    // for debugging, make it accessible as "vm"
+    window.vm = this;
     this.status = "loading";
-    if (!this.digestURL()) {
-      this.statusErrorMessage =
-        "Erreur de paramètres dans l'URL. <br/> Les arguments <code>lat</code>, <code>lon</code>, <code>track</code> et <code>at</code> sont requis. <br />";
-      this.status = "error";
-    }
-    this.status = "error";
+    this.asyncInit();
   },
   methods: {
     niceTimestamp(s) {
       new Date(s * 1000).toISOString().replace(/(T|:\d\d\..*)/g, " ");
     },
-    digestURL() {
-      return false;
+    maybeLoadFromLocalStorage(k = undefined) {
+      k = k ?? this.gpxURL;
+      let v = localStorage.getItem(k);
+      if (v !== null) {
+        this.store = JSON.parse(v);
+      }
+    },
+    saveToLocalStorage(k = undefined) {
+      k = k ?? this.gpxURL;
+      localStorage.setItem(k, JSON.stringify(this.store));
+    },
+    async asyncInit() {
+      if (!(await this.digestURL())) {
+        this.status = "error";
+        return;
+      }
+      this.maybeLoadFromLocalStorage();
+      this.status = "ok";
+    },
+    async digestURL() {
+      let err = "Erreur de paramètres dans l'URL. <br/>";
+      const p = getURLParams();
+      if ("track" in p && "lat" in p && "lon" in p && "at" in p) {
+        const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
+        const track_id = p.trkid ?? 0;
+        try {
+          this.gpx = await loadGpx(gpxURL);
+        } catch (e) {
+          this.statusErrorMessage = `
+            ${err} Erreur de chargement du fichier gpx <code>${gpxURL}</code>.
+            <br/> <code>${safeHTMLText(e.message)}</code>
+            `;
+          return false;
+        }
+        this.gpxURL = gpxURL;
+        // optional parameters
+        if (this.store.startInMilliseconds === null && "start" in p) {
+          this.store.startInMilliseconds = guessTimestamp(p.start);
+        }
+        return true;
+      } else {
+        this.statusErrorMessage =
+          err +
+          "Les arguments <code>lat</code>, <code>lon</code>, <code>track</code> et <code>at</code> sont requis. <br />";
+        return false;
+      }
     },
   },
 });

@@ -1,11 +1,8 @@
 // TODO make it async
-function loadGpx(filename) {
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", filename, false);
-  xhttp.send();
-
-  var gpx = new gpxParser();
-  gpx.parse(xhttp.responseText);
+async function loadGpx(path) {
+  const req = await fetch(path);
+  const gpx = new gpxParser();
+  gpx.parse(await req.text());
   return gpx;
 }
 
@@ -23,6 +20,15 @@ function guessTimestamp(s) {
   }
 }
 
+function getURLParams(url = undefined) {
+  const urlSearchParams = new URLSearchParams((url ?? window.location).search);
+  return Object.fromEntries(urlSearchParams.entries());
+}
+
+// Escape text so that it can be used safely as an html content
+function safeHTMLText(txt) {
+  return new Option(txt).innerHTML;
+}
 // =============== Vue related ============
 const vueSfcLoaderOptions = {
   moduleCache: {
@@ -52,7 +58,6 @@ const vueSfcLoaderOptions = {
 function asyncComponent(relativePath) {
   const { loadModule } = window["vue3-sfc-loader"];
   return Vue.defineAsyncComponent(() => {
-    console.log("./" + relativePath);
     return loadModule("./" + relativePath, vueSfcLoaderOptions);
   });
 }

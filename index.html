@@ -6,6 +6,7 @@
   </head>
   <body>
     <div id="app"></div>
+    <script src="js/GPXParser.min.js"></script>
     <script src="https://unpkg.com/vue@next"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
     <script src="utils.js"></script>
@@ -22,7 +23,7 @@
         template: "<App></App>",
         components,
       });
-      const vm = app.mount("#app");
+      app.mount("#app");
     </script>
   </body>
 </html>
