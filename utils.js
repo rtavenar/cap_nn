@@ -29,6 +29,13 @@ function getURLParams(url = undefined) {
 function safeHTMLText(txt) {
   return new Option(txt).innerHTML;
 }
+
+function Point(ts, lat, lon) {
+  this.ts = ts; // s
+  this.lat = lat;
+  this.lon = lon;
+}
+
 // =============== Vue related ============
 const vueSfcLoaderOptions = {
   moduleCache: {
