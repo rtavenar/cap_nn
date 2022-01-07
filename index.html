@@ -214,12 +214,12 @@
                     return a.ts - b.ts;
                 });
 
-                let s_tab_opt = "<tr><th>Heure</th><th>Latitude</th><th>Longitude</th><th>Distance (optimiste)</th><th>Distance (pessimiste)</th></tr>\n";
-                s_tab_opt += "<tr>"
-                s_tab_opt += "<td>" + new Date(state.start).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + " (Départ)</td>"
-                s_tab_opt += "<td>" + track.points[0].lat + "</td>"
-                s_tab_opt += "<td>" + track.points[0].lon + "</td>"
-                s_tab_opt += "<td class='empty'></td><td class='empty'></td></tr>\n"
+                let s_tab_passages = "<tr><th>Heure</th><th>Latitude</th><th>Longitude</th><th>Distance (optimiste)</th><th>Distance (pessimiste)</th></tr>\n";
+                s_tab_passages += "<tr>"
+                s_tab_passages += "<td>" + new Date(state.start).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + " (Départ)</td>"
+                s_tab_passages += "<td>" + track.points[0].lat + "</td>"
+                s_tab_passages += "<td>" + track.points[0].lon + "</td>"
+                s_tab_passages += "<td class='empty'></td><td class='empty'></td></tr>\n"
 
                 let max_dist_first_half = -1;
                 let min_dist_second_half = Infinity;
@@ -232,7 +232,7 @@
                     }
                 }
 
-                for (i=0; i<state.points.length; i++) {
+                for (let i=0; i<state.points.length; i++) {
                     let p = state.points[i];
                     let optimistic_is_plausible = true;
                     let pessimistic_is_plausible = true;
@@ -256,23 +256,23 @@
                         pessimistic_is_plausible = false;
                     }
 
-                    s_tab_opt += "<tr>"
-                    s_tab_opt += "<td>" + new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + "</td>"
-                    s_tab_opt += "<td>" + p.lat + "</td>"
-                    s_tab_opt += "<td>" + p.lon + "</td>"
+                    s_tab_passages += "<tr>"
+                    s_tab_passages += "<td>" + new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + "</td>"
+                    s_tab_passages += "<td>" + p.lat + "</td>"
+                    s_tab_passages += "<td>" + p.lon + "</td>"
                     if (optimistic_is_plausible) {
-                        s_tab_opt += "<td>" + Math.round(d_opt) + "km, " + deniv_opt + "m D+ (" + v_opt.toFixed(1) + "km/h)</td>"
+                        s_tab_passages += "<td>" + Math.round(d_opt) + "km, " + Math.floor(deniv_opt) + "m D+ (" + v_opt.toFixed(1) + "km/h)</td>"
                     } else {
-                        s_tab_opt += "<td class='empty'></td>"
+                        s_tab_passages += "<td class='empty'></td>"
                     }
                     if (pessimistic_is_plausible) {
-                        s_tab_opt += "<td>" + Math.round(d_pess) + "km, " + deniv_pess + "m D+ (" + v_pess.toFixed(1) + "km/h)</td>"
+                        s_tab_passages += "<td>" + Math.round(d_pess) + "km, " + Math.floor(deniv_pess) + "m D+ (" + v_pess.toFixed(1) + "km/h)</td>"
                     } else {
-                        s_tab_opt += "<td class='empty'></td>"
+                        s_tab_passages += "<td class='empty'></td>"
                     }
-                    s_tab_opt += "</tr>\n";
+                    s_tab_passages += "</tr>\n";
                 }
-                document.getElementById("tab-passages").innerHTML = s_tab_opt;
+                document.getElementById("tab-passages").innerHTML = s_tab_passages;
             }
         </script>
     </head>
