@@ -1,7 +1,10 @@
 <template>
   <div v-if="status === 'ok'">
     <h1>
-      Suivi de coureur sur la trace <code>{{ gpxURL }}</code>
+      Suivi de coureur sur la trace
+      <code :title="gpxURL + ': ' + gpx?.metadata.desc">{{
+        gpx.metadata.name ?? gpxURL
+      }}</code>
     </h1>
 
     <div id="found_tracks">
@@ -58,6 +61,8 @@ export default Vue.defineComponent({
     statusErrorMessage: "Unknown error",
     gpxURL: null,
     gpx: null, // TODO check, it might be a performance issue to have the whole gpx reactive
+    gpxTrkid: null,
+    LSKey: null,
     store: {
       points: [],
       startInMilliseconds: null, // ms
@@ -104,14 +109,14 @@ export default Vue.defineComponent({
       new Date(s * 1000).toISOString().replace(/(T|:\d\d\..*)/g, " ");
     },
     maybeLoadFromLocalStorage(k = undefined) {
-      k = k ?? this.gpxURL;
+      k = k ?? this.LSKey;
       let v = localStorage.getItem(k);
       if (v !== null) {
         this.store = JSON.parse(v);
       }
     },
     saveToLocalStorage(k = undefined) {
-      k = k ?? this.gpxURL;
+      k = k ?? this.LSKey;
       localStorage.setItem(k, JSON.stringify(this.store));
     },
     async asyncInit() {
@@ -119,7 +124,6 @@ export default Vue.defineComponent({
         this.status = "error";
         return;
       }
-      this.maybeLoadFromLocalStorage();
       this.status = "ok";
     },
     async digestURL() {
@@ -127,7 +131,11 @@ export default Vue.defineComponent({
       const p = getURLParams();
       if ("track" in p && "lat" in p && "lon" in p && "at" in p) {
         const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
-        const track_id = p.trkid ?? 0;
+        // We use the gpxURL to allow following several races "at the same time"...
+        // We also allow a lskey=... url param to allow following several runners in the same race
+        this.LSKey = p.lskey ?? gpxURL;
+        this.maybeLoadFromLocalStorage();
+        this.gpxTrkid = p.trkid ?? 0;
         try {
           this.gpx = await loadGpx(gpxURL);
         } catch (e) {
@@ -138,6 +146,17 @@ export default Vue.defineComponent({
           return false;
         }
         this.gpxURL = gpxURL;
+        // base parameters
+        // TODO check formats for lat, lon etc
+        {
+          // digest the query point, use timestamp as identifier
+          let ts = guessTimestamp(p.at) / 1000;
+          if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
+            // avoid duplicates
+            this.store.points.push(new Point(ts, p.lat, p.lon));
+          }
+        }
+
         // optional parameters
         if (this.store.startInMilliseconds === null && "start" in p) {
           this.store.startInMilliseconds = guessTimestamp(p.start);
