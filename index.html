@@ -210,12 +210,22 @@
 
                 let s_tab_opt = "<tr><th>Heure</th><th>Latitude</th><th>Longitude</th><th>Distance (optimiste)</th><th>Distance (pessimiste)</th></tr>\n";
                 for (p of state.points) {
+                    let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
+                    let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000;  // km
+                    let elapsed = p.ts - state.start;  // s
+                    let v_opt = d_opt / (elapsed / 3600);
+                    let v_pess = d_pess / (elapsed / 3600);
+
                     s_tab_opt += "<tr>"
                     s_tab_opt += "<td>" + new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + "</td>"
                     s_tab_opt += "<td>" + p.lat + "</td>"
                     s_tab_opt += "<td>" + p.lon + "</td>"
-                    s_tab_opt += "<td>" + distance_covered_second_half(p.lat, p.lon, track) + "</td>"
-                    s_tab_opt += "<td>" + distance_covered_first_half(p.lat, p.lon, track) + "</td>"
+                    if (v_opt < 20) {
+                        s_tab_opt += "<td>" + Math.round(d_opt) + "km (" + v_opt.toFixed(1) + "km/h)</td>"
+                    } else {
+                        s_tab_opt += "<td></td>"
+                    }
+                    s_tab_opt += "<td>" + Math.round(d_pess) + "km (" + v_pess.toFixed(1) + "km/h)</td>"
                     s_tab_opt += "</tr>\n";
                 }
                 document.getElementById("tab-opt").innerHTML = s_tab_opt;
