@@ -16,7 +16,35 @@
 
     <div id="found_tracks">
       <h2><span id="track_name"></span> <span id="track_length"></span></h2>
-      <table id="tab-passages"></table>
+      <table id="tab-passages">
+        <tr>
+          <th>Heure</th>
+          <th>Latitude</th>
+          <th>Longitude</th>
+          <th>Distance (optimiste)</th>
+          <th>Distance (pessimiste)</th>
+        </tr>
+        <tr v-for="r in tableRows" :key="r.ts" :class="{ depart: r.start }">
+          <td>
+            <i>(Départ)</i>
+            {{ niceTimestamp(r.ts) }}
+          </td>
+          <td>{{ r.lat }}</td>
+          <td>{{ r.lon }}</td>
+          <td v-if="r.dist">
+            {{ Math.round(r.dist) }}km, {{ Math.round(r.dpos) }}D+ ({{
+              r.vel.toFixed(1)
+            }}km/h)
+          </td>
+          <td v-else></td>
+          <td v-if="r.distAlt">
+            {{ Math.round(r.distAlt) }}km, {{ Math.round(r.dposAlt) }}D+ ({{
+              r.velAlt.toFixed(1)
+            }}km/h)
+          </td>
+          <td v-else></td>
+        </tr>
+      </table>
     </div>
 
     <div id="map"></div>
@@ -26,7 +54,7 @@
       <button
         onclick="clear_state() ; save_state_to_local_storage() ; window.location.reload()"
       >
-        Effacer les points et config
+        Effacer les points et config (TODO)
       </button>
       <br />
       Date de début :
@@ -107,6 +135,70 @@ export default Vue.defineComponent({
         this.store.startInMilliseconds = guessTimestamp(v);
       },
     },
+    // to display the table
+    tableRows() {
+      if (this.status !== "ok") {
+        return [];
+      }
+      const res = [];
+      const track = this.gpx.tracks[this.gpxTrkid];
+      let points = this.store.points;
+
+      {
+        let p0 = track.points[0];
+        res.push({ lat: p0.lat, lon: p0.lon, ts: this.start, start: true });
+      }
+
+      let max_dist_first_half = -1;
+      let min_dist_second_half = Infinity;
+      for (let i = 0; i < points.length; i++) {
+        let p = points[i];
+        let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000; // km
+        if (d_opt < min_dist_second_half) {
+          min_dist_second_half = d_opt;
+        }
+      }
+
+      for (let i = 0; i < points.length; i++) {
+        let p = points[i];
+        let optimistic_is_plausible = true;
+        let pessimistic_is_plausible = true;
+
+        let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000; // km
+        let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000; // km
+        let deniv_opt = cumul_dplus_second_half(p.lat, p.lon, track);
+        let deniv_pess = cumul_dplus_first_half(p.lat, p.lon, track);
+        let elapsed = p.ts - this.start; // s
+
+        let v_opt = d_opt / (elapsed / 3600);
+        let v_pess = d_pess / (elapsed / 3600);
+
+        if (v_opt > 20 || min_dist_second_half < d_opt - 1) {
+          // -1 to keep some GPS error margin
+          optimistic_is_plausible = false;
+        }
+        if (d_pess > max_dist_first_half) {
+          max_dist_first_half = d_pess;
+        }
+        if (max_dist_first_half > d_pess + 1) {
+          // +1 to keep some GPS error margin
+          pessimistic_is_plausible = false;
+        }
+        let row = { ...p };
+        res.push(row);
+        if (optimistic_is_plausible) {
+          row.dist = d_opt;
+          row.dpos = deniv_opt;
+          row.vel = v_opt;
+        }
+        if (pessimistic_is_plausible) {
+          row.distAlt = d_pess;
+          row.dposAlt = deniv_pess;
+          row.velAlt = v_pess;
+        }
+      }
+      return res;
+    },
   },
   mounted() {
     // for debugging, make it accessible as "vm"
@@ -116,7 +208,7 @@ export default Vue.defineComponent({
   },
   methods: {
     niceTimestamp(s) {
-      new Date(s * 1000).toISOString().replace(/(T|:\d\d\..*)/g, " ");
+      return new Date(s * 1000).toISOString().replace(/(T|:\d\d\..*)/g, " ");
     },
     maybeLoadFromLocalStorage(k = undefined) {
       k = k ?? this.LSKey;
@@ -134,6 +226,7 @@ export default Vue.defineComponent({
         this.status = "error";
         return;
       }
+      this.saveToLocalStorage();
       this.status = "ok";
     },
     async digestURL() {
@@ -174,7 +267,9 @@ export default Vue.defineComponent({
           if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
             // avoid duplicates
             this.store.points.push(new Point(ts, p.lat, p.lon));
-            // TODO maybe ensure it is sorted at all times
+            this.store.points.sort(function (a, b) {
+              return a.ts - b.ts;
+            });
           }
         }
         // optional parameters
@@ -216,7 +311,10 @@ td {
   padding-right: 1em;
   text-align: center;
 }
-.empty {
+td:empty {
   background-color: #ccc;
+}
+tr:not(.depart) i {
+  visibility: hidden;
 }
 </style>
