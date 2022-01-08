@@ -67,7 +67,7 @@ export default Vue.defineComponent({
     status: "none",
     statusErrorMessage: "Unknown error",
     gpxURL: null,
-    gpx: null, // TODO check, it might be a performance issue to have the whole gpx reactive
+    //gpx: non reactive
     gpxTrkid: null,
     LSKey: null,
     store: {
@@ -86,6 +86,9 @@ export default Vue.defineComponent({
       (p) => baseURL + "?track=migoual-concept-race&start=2022-01-05T06:03" + p
     ),
   }),
+  created() {
+    this.gpx = null;
+  },
   computed: {
     // allow a direct use of "start" to get it in seconds
     start() {
