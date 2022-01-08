@@ -38,6 +38,10 @@ function Point(ts, lat, lon) {
 
 let reduceSum = [(a, b) => a + b, 0];
 
+function countKeysAmong(o, ...keys) {
+  return keys.map((k) => k in o).reduce(...reduceSum);
+}
+
 // =============== protectedtex ============
 /* Need
     <script src="https://www.protectedtext.com/js/sha512.js"></script>
