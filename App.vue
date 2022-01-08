@@ -81,7 +81,9 @@
           >
         </li>
         <li>
-          <a :href="sharedURLlink">Voir et modifier la liste partagée.</a>
+          <a :href="sharedURLlink" target="_blank"
+            >Voir et modifier la liste partagée.</a
+          >
         </li>
       </ul>
       <br />
