@@ -287,7 +287,7 @@ export default Vue.defineComponent({
         this.status = "error";
         return;
       }
-      this.saveToLocalStorage();
+      this.saveToLocalStorage(); // just to be sure, but it is probably ok with the watch
       this.status = "ok";
     },
     async digestURL() {
@@ -325,6 +325,9 @@ export default Vue.defineComponent({
           // TODO check formats for lat, lon, ts
           // digest the query point, use timestamp as identifier
           let ts = guessTimestamp(p.at) / 1000;
+          if (this.store.shareNewPoints) {
+            await appendSharedContent(this.lskey, window.location.toString());
+          }
           if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
             // avoid duplicates
             this.store.points.push(new Point(ts, p.lat, p.lon));
