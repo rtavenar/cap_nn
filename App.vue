@@ -57,13 +57,16 @@
 
     <div id="config">
       <h3>Information et configuration</h3>
+      <button @click="reloadPage()">Recharger la page</button> (par exemple
+      après avoir changé la configuration) <br />
       <button
         onclick="clear_state() ; save_state_to_local_storage() ; window.location.reload()"
       >
         Effacer les points et config (TODO)
       </button>
+
       <br />
-      Partage de suivi :
+      Partage de suivi (au chargement de la page) :
       <ul>
         <li>
           <label
@@ -251,6 +254,9 @@ export default Vue.defineComponent({
   methods: {
     niceTimestamp(s) {
       return new Date(s * 1000).toISOString().replace(/(T|:\d\d\..*)/g, " ");
+    },
+    reloadPage() {
+      window.location.reload();
     },
     maybeLoadFromLocalStorage(k = undefined) {
       k = k ?? this.lskey;
