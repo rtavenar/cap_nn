@@ -2,7 +2,7 @@
   <div v-if="status === 'ok'">
     <page-title
       :v="
-        (LSKey !== gpxURL ? '(' + LSKey + ') ' : '') +
+        (lskey !== gpxURL ? '(' + lskey + ') ' : '') +
         (gpx.metadata.name ?? 'Suivi Coureur')
       "
     />
@@ -11,7 +11,7 @@
       <code :title="gpxURL + ': ' + gpx?.metadata.desc">{{
         gpx.metadata.name ?? gpxURL
       }}</code>
-      <span v-if="LSKey !== gpxURL"> ({{ LSKey }})</span>
+      <span v-if="lskey !== gpxURL"> ({{ lskey }})</span>
     </h1>
 
     <div id="found_tracks">
@@ -57,6 +57,25 @@
         Effacer les points et config (TODO)
       </button>
       <br />
+      Partage de suivi :
+      <ul>
+        <li>
+          <label
+            ><input type="checkbox" v-model="store.shareNewPoints" /> Partager
+            les nouveaux points reçus.</label
+          >
+        </li>
+        <li>
+          <label
+            ><input type="checkbox" v-model="store.importSharedPoints" />
+            Utiliser les nouveaux points partagés par d'autres.</label
+          >
+        </li>
+        <li>
+          <a :href="sharedURLlink">Voir et modifier la liste partagée.</a>
+        </li>
+      </ul>
+      <br />
       Date de début :
       <input type="datetime-local" v-model="startTimeAsString" />
       <br />
@@ -79,6 +98,11 @@
     >
     <br /><br />Exemples pour tester le multipoint : <br />
     <ul>
+      <li>
+        <a :href="baseURL + '?track=migoual-concept-race'"
+          >{{ baseURL }}?track=migoual-concept-race</a
+        >
+      </li>
       <li v-for="u in testUrlsToShowOnError" :key="u">
         <a :href="u" target="_blank">{{ u }}</a>
       </li>
@@ -97,14 +121,16 @@ export default Vue.defineComponent({
     gpxURL: null,
     //gpx: non reactive
     gpxTrkid: null,
-    LSKey: null,
+    lskey: null,
     store: {
       points: [],
       startInMilliseconds: null, // ms
+      shareNewPoints: false,
+      importSharedPoints: false,
     },
     baseURL,
     testUrlsToShowOnError: [
-      "&lat=44.12433&lon=3.13856&at=2022-01-05T06:33",
+      "&lat=44.12433&lon=3.13856&at=2022-01-05T07:33",
       "&lat=44.10933&lon=3.30856&at=2022-01-05T12:03",
       "&lat=44.13056&lon=3.38203&at=2022-01-05T15:55", // lanuejols,
       "&lat=44.13078&lon=3.38426&at=2022-01-05T16:23",
@@ -118,6 +144,9 @@ export default Vue.defineComponent({
     this.gpx = null;
   },
   computed: {
+    sharedURLlink() {
+      return getProtectedTextURL(lskeyToDocid(this.lskey), false, false, true);
+    },
     // allow a direct use of "start" to get it in seconds
     start() {
       return this.store.startInMilliseconds / 1000;
@@ -211,14 +240,14 @@ export default Vue.defineComponent({
       return new Date(s * 1000).toISOString().replace(/(T|:\d\d\..*)/g, " ");
     },
     maybeLoadFromLocalStorage(k = undefined) {
-      k = k ?? this.LSKey;
+      k = k ?? this.lskey;
       let v = localStorage.getItem(k);
       if (v !== null) {
         this.store = JSON.parse(v);
       }
     },
     saveToLocalStorage(k = undefined) {
-      k = k ?? this.LSKey;
+      k = k ?? this.lskey;
       localStorage.setItem(k, JSON.stringify(this.store));
     },
     async asyncInit() {
@@ -236,7 +265,7 @@ export default Vue.defineComponent({
         const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
         // We use the gpxURL to allow following several races "at the same time"...
         // We also allow a lskey=... url param to allow following several runners in the same race
-        this.LSKey = p.lskey ?? gpxURL;
+        this.lskey = p.lskey ?? gpxURL;
         this.maybeLoadFromLocalStorage();
         this.gpxTrkid = p.trkid ?? 0;
         try {

@@ -38,6 +38,68 @@ function Point(ts, lat, lon) {
 
 let reduceSum = [(a, b) => a + b, 0];
 
+// =============== protectedtex ============
+/* Need
+    <script src="https://www.protectedtext.com/js/sha512.js"></script>
+    <script src="https://www.protectedtext.com/js/aes.js"></script>
+  NB: we also use a CORS proxy at heeere.com that has a yes-list of only a few servers (including localhost:7777 and the github of the 3 renards) -->
+*/
+let protectedTextEnd =
+  "edf65083cef1199e208a0e7a463191bec12eedaad5c7d53ccdf167a203bdc2daac8c671c7a1808798ab2077a6f67c9e43bf9090202d685615bb1386ba1a7b98a";
+let protectedTextPassword = "SmcqiZ5qQ9Vd8P9";
+
+function lskeyToDocid(lskey) {
+  return "cap_nn___" + lskey;
+}
+function getProtectedTextURL(docid, get = true, cors = true, pass = undefined) {
+  return (
+    (cors ? "https://cors.heeere.com/" : "") +
+    "https://www.protectedtext.com/" +
+    docid +
+    (get ? "?action=getJSON" : "") +
+    (pass === true ? "?" + protectedTextPassword : pass ? "?" + pass : "")
+  );
+}
+async function appendSharedContent(lskey, v, pass, end) {
+  return await getSharedContent(lskey, pass, end, v);
+}
+async function getSharedContent(
+  lskey,
+  pass = protectedTextPassword,
+  end = protectedTextEnd,
+  alsoAppendValue = undefined
+) {
+  let docid = lskeyToDocid(lskey);
+  let req = await fetch(getProtectedTextURL(docid), {
+    headers: {
+      Pragma: "no-cache",
+      "Cache-Control": "no-cache",
+    },
+  });
+  let o = await req.json();
+  let raw = CryptoJS.AES.decrypt(o.eContent, pass).toString(CryptoJS.enc.Utf8);
+  let content = raw.substr(0, raw.length - end.length);
+  if (!alsoAppendValue) {
+    return content;
+  }
+  let initHashContent = content + CryptoJS.SHA512(pass).toString();
+  initHashContent = CryptoJS.SHA512(initHashContent).toString() + 2;
+  content += "\n" + alsoAppendValue;
+  let currentHashContent = content + CryptoJS.SHA512(pass).toString();
+  currentHashContent = CryptoJS.SHA512(currentHashContent).toString() + 2;
+  let encryptedContent = CryptoJS.AES.encrypt(content + end, pass).toString();
+  await fetch(getProtectedTextURL(docid, false), {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      initHashContent,
+      currentHashContent,
+      encryptedContent,
+      action: "save",
+    }),
+  });
+}
+
 // =============== Vue related ============
 const vueSfcLoaderOptions = {
   moduleCache: {
