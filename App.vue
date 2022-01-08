@@ -311,10 +311,7 @@ export default Vue.defineComponent({
         }
         this.gpxURL = gpxURL;
         // base parameters
-        const nbFromTriplet = "lat lon at"
-          .split(" ")
-          .map((k) => k in p)
-          .reduce(...reduceSum);
+        const nbFromTriplet = countKeysAmong(p, "lat", "lon", "at");
         if (nbFromTriplet > 0) {
           if (nbFromTriplet < 3) {
             this.statusErrorMessage =
@@ -326,20 +323,39 @@ export default Vue.defineComponent({
           // digest the query point, use timestamp as identifier
           let ts = guessTimestamp(p.at) / 1000;
           if (this.store.shareNewPoints) {
-            await appendSharedContent(this.lskey, window.location.toString());
+            await appendSharedContent(
+              this.lskey,
+              this.niceTimestamp(ts) + "\n" + window.location.toString() + "\n"
+            );
           }
+          // avoid duplicates
           if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
-            // avoid duplicates
             this.store.points.push(new Point(ts, p.lat, p.lon));
-            this.store.points.sort(function (a, b) {
-              return a.ts - b.ts;
-            });
           }
         }
         // optional parameters
         if (this.store.startInMilliseconds === null && "start" in p) {
           this.store.startInMilliseconds = guessTimestamp(p.start);
         }
+        if (this.store.importSharedPoints) {
+          let sharedContent = await getSharedContent(this.lskey);
+          for (let l of sharedContent
+            .split("\n")
+            .filter((l) => l.startsWith(this.baseURL))) {
+            // we redo mostly as above... some repetition
+            let p = getURLParams(new URL(l));
+            if (countKeysAmong(p, "lat", "lon", "at") == 3) {
+              let ts = guessTimestamp(p.at) / 1000;
+              if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
+                this.store.points.push(new Point(ts, p.lat, p.lon));
+              }
+            }
+          }
+        }
+        // ensure points are sorted
+        this.store.points.sort(function (a, b) {
+          return a.ts - b.ts;
+        });
         return true;
       } else {
         this.statusErrorMessage =
