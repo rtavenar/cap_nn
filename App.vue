@@ -59,11 +59,6 @@
       <h3>Information et configuration</h3>
       <button @click="reloadPage()">Recharger la page</button> (par exemple
       après avoir changé la configuration) <br />
-      <button
-        onclick="clear_state() ; save_state_to_local_storage() ; window.location.reload()"
-      >
-        Effacer les points et config (TODO)
-      </button>
 
       <br />
       Partage de suivi (au chargement de la page) :
@@ -91,6 +86,10 @@
       <input type="datetime-local" v-model="startTimeAsString" />
       <br />
       <code>{{ niceTimestamp(start) }}</code>
+      <hr />
+      <button @click="store.points.splice(0, store.points.length)">
+        Effacer les points (localement)
+      </button>
     </div>
   </div>
   <div v-else-if="status === 'loading'">
@@ -175,6 +174,7 @@ export default Vue.defineComponent({
       get() {
         if (this.store.startInMilliseconds === null) {
         }
+        // TODO fix/check here and in set and in niceTimestamp for the UTC vs local issues
         return new Date(this.store.startInMilliseconds)
           .toISOString()
           .replace(/:\d\d\..*/g, "");
