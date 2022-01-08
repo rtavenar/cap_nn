@@ -102,15 +102,23 @@
         baseURL
       }}?track=migoual-concept-race&lat=%1$f&lon=%2$f&at=%3$ts&start=2022-07-09T06:03</code
     >
-    <br /><br />Exemples pour tester le multipoint : <br />
+    <br /><br />Exemples pour tester le multipoint : <br /><input
+      v-model="testQueryFragmentToAdd"
+      style="width: 40em"
+    />
+    <br />
     <ul>
       <li>
-        <a :href="baseURL + '?track=migoual-concept-race'"
-          >{{ baseURL }}?track=migoual-concept-race</a
+        <a :href="baseURL + testQueryFragmentToAdd"
+          >{{ baseURL }}{{ testQueryFragmentToAdd }}</a
         >
       </li>
-      <li v-for="u in testUrlsToShowOnError" :key="u">
-        <a :href="u" target="_blank">{{ u }}</a>
+      <li
+        v-for="u in testUrlsToShowOnError"
+        :key="u"
+        :set="(__u = baseURL + testQueryFragmentToAdd + u)"
+      >
+        <a :href="__u" target="_blank">{{ __u }}</a>
       </li>
     </ul>
   </div>
@@ -135,6 +143,7 @@ export default Vue.defineComponent({
       importSharedPoints: false,
     },
     baseURL,
+    testQueryFragmentToAdd: "?track=migoual-concept-race",
     testUrlsToShowOnError: [
       "&lat=44.12433&lon=3.13856&at=2022-01-05T07:33",
       "&lat=44.10933&lon=3.30856&at=2022-01-05T12:03",
@@ -142,9 +151,7 @@ export default Vue.defineComponent({
       "&lat=44.13078&lon=3.38426&at=2022-01-05T16:23",
       "&lat=44.10517&lon=3.51768&at=2022-01-05T21:12",
       "&lat=44.10433&lon=3.53856&at=2022-01-05T22:03",
-    ].map(
-      (p) => baseURL + "?track=migoual-concept-race&start=2022-01-05T06:03" + p
-    ),
+    ].map((p) => "&start=2022-01-05T06:03" + p),
   }),
   created() {
     this.gpx = null;
