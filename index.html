@@ -276,7 +276,7 @@
                     s_tab_passages += "</tr>\n";
                 }
                 document.getElementById("tab-passages").innerHTML = s_tab_passages;
-                document.getElementById("config-start").value = new Date(state.start).toUTCString();
+                document.getElementById("config-start").value = new Date(state.start).toISOString().slice(0, 16);
             }
         </script>
     </head>
