@@ -44,8 +44,6 @@ let reduceSum = [(a, b) => a + b, 0];
     <script src="https://www.protectedtext.com/js/aes.js"></script>
   NB: we also use a CORS proxy at heeere.com that has a yes-list of only a few servers (including localhost:7777 and the github of the 3 renards) -->
 */
-let protectedTextEnd =
-  "edf65083cef1199e208a0e7a463191bec12eedaad5c7d53ccdf167a203bdc2daac8c671c7a1808798ab2077a6f67c9e43bf9090202d685615bb1386ba1a7b98a";
 let protectedTextPassword = "SmcqiZ5qQ9Vd8P9";
 
 function lskeyToDocid(lskey) {
@@ -60,16 +58,16 @@ function getProtectedTextURL(docid, get = true, cors = true, pass = undefined) {
     (pass === true ? "?" + protectedTextPassword : pass ? "?" + pass : "")
   );
 }
-async function appendSharedContent(lskey, v, pass, end) {
-  return await getSharedContent(lskey, pass, end, v);
+async function appendSharedContent(lskey, v, pass) {
+  return await getSharedContent(lskey, pass, v);
 }
 async function getSharedContent(
   lskey,
   pass = protectedTextPassword,
-  end = protectedTextEnd,
   alsoAppendValue = undefined
 ) {
   let docid = lskeyToDocid(lskey);
+  let end = CryptoJS.SHA512("/" + docid).toString();
   let req = await fetch(getProtectedTextURL(docid), {
     headers: {
       Pragma: "no-cache",
