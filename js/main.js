@@ -95,3 +95,13 @@ function time_to_string(elapsed) {
 
     return elapsed_h + "h " + elapsed_m + "m " + elapsed_s + "s";
 }
+
+function timestampToDatetimeInputString(timestamp) {
+    const date = new Date((timestamp + _getTimeZoneOffsetInMs()));
+    // slice(0, 19) includes seconds
+    return date.toISOString().slice(0, 19);
+}
+
+function _getTimeZoneOffsetInMs() {
+    return new Date().getTimezoneOffset() * -60 * 1000;
+}
