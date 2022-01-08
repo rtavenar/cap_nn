@@ -139,6 +139,7 @@ export default Vue.defineComponent({
     //gpx: non reactive
     gpxTrkid: null,
     lskey: null,
+    saveToLocalStorageOnStoreChange: true,
     store: {
       points: [],
       startInMilliseconds: null, // ms
@@ -243,6 +244,16 @@ export default Vue.defineComponent({
         }
       }
       return res;
+    },
+  },
+  watch: {
+    store: {
+      deep: true,
+      handler() {
+        if (this.saveToLocalStorageOnStoreChange) {
+          this.saveToLocalStorage();
+        }
+      },
     },
   },
   mounted() {
