@@ -276,6 +276,7 @@
                     s_tab_passages += "</tr>\n";
                 }
                 document.getElementById("tab-passages").innerHTML = s_tab_passages;
+                document.getElementById("config-start").value = new Date(state.start).toUTCString();
             }
         </script>
     </head>
@@ -312,7 +313,8 @@
             <h3>Information et configuration</h3>
             <button onclick="clear_state() ; save_state_to_local_storage() ; window.location.reload()">Effacer les points et config</button>
             <br/>
-            TODO bind Date de début : <input type="datetime-local" oninput="state.start = Date.parse(this.value) ; save_state_to_local_storage() ; window.location.reload()">
+            Date de début : 
+            <input id="config-start" type="datetime-local" oninput="state.start = Date.parse(this.value) ; save_state_to_local_storage() ; window.location.reload()">
         </div>
     </body>
 </html>
