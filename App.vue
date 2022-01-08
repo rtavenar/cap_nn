@@ -21,8 +21,8 @@
           <th>Heure</th>
           <th>Latitude</th>
           <th>Longitude</th>
-          <th>Distance (optimiste)</th>
           <th>Distance (pessimiste)</th>
+          <th>Distance (optimiste)</th>
         </tr>
         <tr v-for="r in tableRows" :key="r.ts" :class="{ depart: r.start }">
           <td>
@@ -31,16 +31,22 @@
           </td>
           <td>{{ r.lat }}</td>
           <td>{{ r.lon }}</td>
-          <td v-if="r.dist">
-            {{ Math.round(r.dist) }}km, {{ Math.round(r.dpos) }}D+ ({{
-              r.vel.toFixed(1)
-            }}km/h)
-          </td>
-          <td v-else></td>
           <td v-if="r.distAlt">
             {{ Math.round(r.distAlt) }}km, {{ Math.round(r.dposAlt) }}D+ ({{
               r.velAlt.toFixed(1)
-            }}km/h)
+            }}km/h) ({{
+              (((r.distAlt + r.dposAlt / 150) / r.elapsed) * 3600).toFixed(1)
+            }}
+            strain/h)
+          </td>
+          <td v-else></td>
+          <td v-if="r.dist">
+            {{ Math.round(r.dist) }}km, {{ Math.round(r.dpos) }}D+ ({{
+              r.vel.toFixed(1)
+            }}km/h) ({{
+              (((r.dist + r.dpos / 150) / r.elapsed) * 3600).toFixed(1)
+            }}
+            strain/h)
           </td>
           <td v-else></td>
         </tr>
@@ -213,7 +219,7 @@ export default Vue.defineComponent({
           // +1 to keep some GPS error margin
           pessimistic_is_plausible = false;
         }
-        let row = { ...p };
+        let row = { ...p, elapsed };
         res.push(row);
         if (optimistic_is_plausible) {
           row.dist = d_opt;
