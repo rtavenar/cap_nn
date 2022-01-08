@@ -31,9 +31,9 @@ function safeHTMLText(txt) {
 }
 
 function Point(ts, lat, lon) {
-  this.ts = ts; // s
-  this.lat = lat;
-  this.lon = lon;
+  this.ts = parseInt(ts); // s
+  this.lat = parseFloat(lat);
+  this.lon = parseFloat(lon);
 }
 
 let reduceSum = [(a, b) => a + b, 0];
