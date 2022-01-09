@@ -408,6 +408,7 @@ export default Vue.defineComponent({
         if (this.store.startInMilliseconds === null && "start" in p) {
           this.store.startInMilliseconds = guessTimestamp(p.start);
         }
+        // import points from the remote pad
         if (this.store.importSharedPoints) {
           let sharedContent = await getSharedContent(this.lskey);
           for (let l of sharedContent
