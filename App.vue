@@ -293,7 +293,72 @@ export default Vue.defineComponent({
         return;
       }
       this.saveToLocalStorage(); // just to be sure, but it is probably ok with the watch
+      this.drawMap();
       this.status = "ok";
+    },
+    drawMap() {
+      if (!document.getElementById("map")) {
+        // not mounted yet?
+        window.setTimeout(() => this.drawMap(), 1);
+        return;
+      }
+      const track = this.gpx.tracks[this.gpxTrkid];
+      let mymap = L.map("map");
+
+      new ResizeObserver(() => {
+        mymap.invalidateSize();
+      }).observe(document.getElementById("map"));
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 50,
+      }).addTo(mymap);
+
+      let coordinates = track.points.map((p) => [
+        p.lat.toFixed(5),
+        p.lon.toFixed(5),
+      ]);
+      var polyline = L.polyline(coordinates, {
+        weight: 10,
+        color: "darkred",
+        opacity: 0.5,
+      }).addTo(mymap);
+
+      polyline.on("click", (ev) => {
+        let ll = ev.latlng;
+        let m = L.marker(ll).addTo(mymap);
+        m._icon.classList.add("estimate");
+        m.bindTooltip("TODO estimate");
+        //m.bindTooltip(estimate_to_html(estimate_progress(ll))) // TODO
+        m.on("click", () => {
+          m.remove();
+          console.log(`&lat=${ll.lat.toFixed(5)}&lon=${ll.lng.toFixed(5)}&at=`); // helper to create test URLs
+        });
+      });
+
+      // zoom the map to the polyline
+      mymap.fitBounds(polyline.getBounds());
+
+      let end = Math.max(...this.store.points.map((p) => p.ts));
+      let ts = this.currentPointTimestamp;
+      for (let p of this.store.points) {
+        let m = L.marker([p.lat, p.lon]).addTo(mymap);
+        m.bindTooltip(`
+                    ${new Date(p.ts * 1000)
+                      .toISOString()
+                      .replace(/(T|:\d\d\..*)/g, " ")}<br/>
+                    Temps écoulé : <b>${time_to_string(p.ts - this.start)}</b>
+                    `);
+        if (p.ts !== ts) {
+          m._icon.style.filter = `grayscale(${
+            80 - (80 * (p.ts - this.start)) / (end - this.start)
+          }%)`;
+          //m._icon.style.filter = `hue-rotate(${100 * (p.ts-this.start)/(end-this.start)}deg)`;
+        } else {
+          m._icon.style.filter = `brightness(150%)`;
+        }
+      }
     },
     async digestURL() {
       let err = "Erreur de paramètres dans l'URL. <br/>";
