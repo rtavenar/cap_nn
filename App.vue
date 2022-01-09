@@ -177,12 +177,7 @@ export default Vue.defineComponent({
     // for the input...
     startTimeAsString: {
       get() {
-        if (this.store.startInMilliseconds === null) {
-        }
-        // TODO fix/check here and in set and in niceTimestamp for the UTC vs local issues
-        return new Date(this.store.startInMilliseconds)
-          .toISOString()
-          .replace(/:\d\d\..*/g, "");
+        return timestampToDatetimeInputString(this.store.startInMilliseconds);
       },
       set(v) {
         this.store.startInMilliseconds = guessTimestamp(v);
@@ -271,7 +266,9 @@ export default Vue.defineComponent({
   },
   methods: {
     niceTimestamp(s) {
-      return new Date(s * 1000).toISOString().replace(/(T|:\d\d\..*)/g, " ");
+      //new Date(s * 1000).toLocaleString();
+      let str = timestampToDatetimeInputString(s * 1000);
+      return str.replace(/(T|:\d\d\..*)/g, " ");
     },
     reloadPage() {
       window.location.reload();
