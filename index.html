@@ -25,6 +25,7 @@
       crossorigin=""
     ></script>
 
+<<<<<<< HEAD
     <script src="https://unpkg.com/vue@next"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
     <script src="js/main.js"></script>
@@ -45,3 +46,283 @@
     </script>
   </body>
 </html>
+=======
+                var gpx = new gpxParser(); //Create gpxParser Object
+                gpx.parse(xhttp.responseText);
+                return gpx;
+            }
+
+            function draw_map($_GET, gpx_track) {
+                let mymap = L.map('map');
+                
+                new ResizeObserver(() => {
+                    mymap.invalidateSize();
+                }).observe(document.getElementById('map'));
+
+                L.tileLayer(
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
+                    {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        maxZoom: 50
+                    }
+                ).addTo(mymap);
+
+                let coordinates = gpx_track.points.map(p => [p.lat.toFixed(5), p.lon.toFixed(5)]);
+                var polyline = L.polyline(coordinates, { weight: 10, color: 'darkred', opacity: 0.5 }).addTo(mymap)
+
+                polyline.on('click', (ev) => {
+                    let ll = ev.latlng
+                    let m = L.marker(ll).addTo(mymap)
+                    m._icon.classList.add('estimate')
+                    m.bindTooltip("TODO estimate")
+                    //m.bindTooltip(estimate_to_html(estimate_progress(ll))) // TODO
+                    m.on('click', () => {
+                        m.remove();
+                        console.log(`&lat=${ll.lat.toFixed(5)}&lon=${ll.lng.toFixed(5)}&at=`); // helper to create test URLs
+                    })
+                });
+
+
+                // zoom the map to the polyline
+                mymap.fitBounds(polyline.getBounds());
+
+                let start = state.start / 1000;
+                let end = Math.max(...state.points.map(p => p.ts))
+                let ts = guess_timestamp($_GET["at"]) / 1000; // query timestamp
+                for (let p of state.points) {
+                    let m = L.marker([p.lat, p.lon]).addTo(mymap);
+                    m.bindTooltip(`
+                    ${new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', )}<br/>
+                    Temps écoulé : ${time_to_string(p.ts - start)}
+                    `);
+                    if (p.ts !== ts) {
+                        m._icon.style.filter = `grayscale(${80 - 80*(p.ts-start)/(end-start)}%)`;
+                        //m._icon.style.filter = `hue-rotate(${100 * (p.ts-start)/(end-start)}deg)`;
+                    } else {
+                        m._icon.style.filter = `brightness(150%)`;
+                    }
+                }
+            }
+
+            function guess_timestamp(s) {
+                if (-1 !== s.indexOf('T')) {
+                    return Date.parse(s)
+                }
+                let v = parseInt(s)
+                if (v < 30000000000) { // before end of 1970, so we probably receive sec and not ms
+                    return 1000*v
+                } else {
+                    return v
+                }
+            }
+
+            let state = null
+            function Point(ts, lat, lon) {
+                this.ts = ts // s
+                this.lat = lat
+                this.lon = lon
+            }
+            function clear_state() {
+                state = {
+                    start: null, // ms
+                    points: []
+                };
+            }
+            LS_KEY = "cap_nn_state"; // should make it URL configurable, and especially should use by default the trackname or an id=
+            function load_state_from_local_storage(k=LS_KEY) {
+                let v = localStorage.getItem(k);
+                if (v !== null) {
+                    state = JSON.parse(v);
+                }
+            }
+            function save_state_to_local_storage(k=LS_KEY) {
+                localStorage.setItem(k, JSON.stringify(state));
+            }
+            clear_state();
+            load_state_from_local_storage(LS_KEY);
+
+            console.log(JSON.stringify(state, null, 2))
+
+            function fill_elements() {
+                // get query arguments            
+                var $_GET = parse_args();
+
+                if (!valid_get_args($_GET)) {
+                    let baseurl = window.location.toString().replace(/\?.*/g, "");
+                    document.getElementById("title").innerHTML = "Suivi de coureur sur une trace GPX (HTML/JS only)";
+                    document.getElementById("warning").innerHTML = "Vous devez passer les arguments <code>lat</code>, <code>lon</code> et <code>track</code>.<br />" +
+                        "Exemple d'URL valide : <br/><code>"+baseurl+"?track=migoual-concept-race&lat=44.10433&lon=3.53856&start=1641336134&at=1641306320</code> <br/>" +
+                        "Exemple de config SMS : <br/><code>"+baseurl+"?track=migoual-concept-race&lat=%1$f&lon=%2$f&at=%3$ts&start=2022-07-09T06:03</code>" +
+                        "<br/><br/>Exemples pour tester le multipoint : <br/>" + [
+                            "&lat=44.12433&lon=3.13856&at=2022-01-05T06:33",
+                            "&lat=44.10933&lon=3.30856&at=2022-01-05T12:03",
+                            "&lat=44.13056&lon=3.38203&at=2022-01-05T15:55", // lanuejols,
+                            "&lat=44.13078&lon=3.38426&at=2022-01-05T16:23",
+                            "&lat=44.10517&lon=3.51768&at=2022-01-05T21:12",
+                            "&lat=44.10433&lon=3.53856&at=2022-01-05T22:03",
+                            ]
+                            .map(p => baseurl+"?track=migoual-concept-race&start=2022-01-05T06:03"+p)
+                            .map(u => `<a href="${u}" target="_blank">${u}</a>`)
+                            .join("<br/>")
+                        ;
+                    return;
+                }
+                var url = "gpx/" + $_GET["track"] + ".gpx";
+                const track_id = $_GET["trkid"] ?? 0;
+                
+                document.getElementById("title").innerHTML = "Suivi de coureur sur la trace <code>" + url + "</code>";
+
+                var gpx_o = load_gpx(url);
+                
+                const track = gpx_o.tracks[track_id];
+
+                document.getElementById("track_name").innerHTML = track.name;
+                document.getElementById("track_length").innerHTML = "(" + Math.round(track.distance.total / 1000) + "km)";
+                
+                let d_opt_final = distance_covered_second_half($_GET["lat"], $_GET["lon"], track);
+                let d_pess_final = distance_covered_first_half($_GET["lat"], $_GET["lon"], track);
+                document.getElementById("opt_dist_parcourue").innerHTML = Math.round(d_opt_final / 1000) + "km";
+                document.getElementById("pess_dist_parcourue").innerHTML = Math.round(d_pess_final / 1000) + "km";
+
+                // we receive at and start
+                // (for each, there is an automatic guess between ms epoch, sec epoch, or ISO date)
+                if (!("start" in $_GET) && state.start === null) {
+                    for (span_id of ["temps_ecoule", "opt_temps_restant", "pess_temps_restant"]) {
+                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>start</code> non fournie et aucune date dans la section configuration)";
+                    }
+                } else if (!("at" in $_GET)) {
+                    for (span_id of ["temps_ecoule", "opt_temps_restant", "pess_temps_restant"]) {
+                        document.getElementById(span_id).innerHTML = "NaN (heure de début <code>at</code> non fournie)";
+                    }
+                } else {
+                    if (!state.start) {
+                        state.start = guess_timestamp($_GET["start"]);
+                    }
+                    let cur_date = guess_timestamp($_GET["at"]) / 1000; // in sec
+                    let start_date = state.start / 1000;
+                    let elapsed = cur_date - start_date;
+                    document.getElementById("temps_ecoule").innerHTML = time_to_string(elapsed);
+
+                    let expected_remaining_time_opt = elapsed * (track.distance.total - d_opt_final) / d_opt_final;
+                    document.getElementById("opt_temps_restant").innerHTML = time_to_string(expected_remaining_time_opt);
+
+                    let expected_remaining_time_pess = elapsed * (track.distance.total - d_pess_final) / d_pess_final;
+                    document.getElementById("pess_temps_restant").innerHTML = time_to_string(expected_remaining_time_pess);
+                }
+
+                // digest the query point, use timestamp as identifier
+                let ts = guess_timestamp($_GET["at"]) / 1000;
+                if (state.points.map(p => p.ts).indexOf(ts) === -1) { // avoid duplicates
+                    state.points.push(new Point(ts, $_GET["lat"], $_GET["lon"]));
+                }
+
+                save_state_to_local_storage(LS_KEY);
+
+                draw_map($_GET, track);
+
+                state.points.sort(function (a, b) {
+                    return a.ts - b.ts;
+                });
+
+                let s_tab_passages = "<tr><th>Heure</th><th>Latitude</th><th>Longitude</th><th>Distance (optimiste)</th><th>Distance (pessimiste)</th></tr>\n";
+                s_tab_passages += "<tr>"
+                s_tab_passages += "<td>" + new Date(state.start).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + " (Départ)</td>"
+                s_tab_passages += "<td>" + track.points[0].lat + "</td>"
+                s_tab_passages += "<td>" + track.points[0].lon + "</td>"
+                s_tab_passages += "<td class='empty'></td><td class='empty'></td></tr>\n"
+
+                let max_dist_first_half = -1;
+                let min_dist_second_half = Infinity;
+                for (i=0; i<state.points.length; i++) {
+                    let p = state.points[i];
+
+                    let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
+                    if (d_opt < min_dist_second_half) {
+                        min_dist_second_half = d_opt;
+                    }
+                }
+
+                for (let i=0; i<state.points.length; i++) {
+                    let p = state.points[i];
+                    let optimistic_is_plausible = true;
+                    let pessimistic_is_plausible = true;
+
+                    let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000;  // km
+                    let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000;  // km
+                    let deniv_opt = cumul_dplus_second_half(p.lat, p.lon, track);
+                    let deniv_pess = cumul_dplus_first_half(p.lat, p.lon, track);
+                    let elapsed = p.ts - state.start / 1000;  // s
+                    
+                    let v_opt = d_opt / (elapsed / 3600);
+                    let v_pess = d_pess / (elapsed / 3600);
+
+                    if (v_opt > 20 || min_dist_second_half < d_opt - 1) {  // -1 to keep some GPS error margin
+                        optimistic_is_plausible = false;
+                    }
+                    if (d_pess > max_dist_first_half) {
+                        max_dist_first_half = d_pess;
+                    }
+                    if (max_dist_first_half > d_pess + 1) {  // +1 to keep some GPS error margin
+                        pessimistic_is_plausible = false;
+                    }
+
+                    s_tab_passages += "<tr>"
+                    s_tab_passages += "<td>" + new Date(p.ts*1000).toISOString().replace(/(T|:\d\d\..*)/g, ' ', ) + "</td>"
+                    s_tab_passages += "<td>" + p.lat + "</td>"
+                    s_tab_passages += "<td>" + p.lon + "</td>"
+                    if (optimistic_is_plausible) {
+                        s_tab_passages += "<td>" + Math.round(d_opt) + "km, " + Math.floor(deniv_opt) + "m D+ (" + v_opt.toFixed(1) + "km/h)</td>"
+                    } else {
+                        s_tab_passages += "<td class='empty'></td>"
+                    }
+                    if (pessimistic_is_plausible) {
+                        s_tab_passages += "<td>" + Math.round(d_pess) + "km, " + Math.floor(deniv_pess) + "m D+ (" + v_pess.toFixed(1) + "km/h)</td>"
+                    } else {
+                        s_tab_passages += "<td class='empty'></td>"
+                    }
+                    s_tab_passages += "</tr>\n";
+                }
+                document.getElementById("tab-passages").innerHTML = s_tab_passages;
+                document.getElementById("config-start").value = timestampToDatetimeInputString(state.start);
+            }
+        </script>
+    </head>
+    <body onload="fill_elements()">
+        <h1 id="title"></h1>
+
+        <p id="warning"></p>
+
+        <div id="found_tracks">
+            <h2><span id="track_name"></span> <span id="track_length"></span></h2>
+
+            <p>Temps écoulé: <span id="temps_ecoule"></span></p>
+
+            <h3>Version optimiste (les coureurs ont dépassé la mi-course)</h3>
+
+            <ul>
+                <li>Distance parcourue: <span id="opt_dist_parcourue"></span></li>
+                <li>Temps restant (estimé): <span id="opt_temps_restant"></span></li>
+            </ul>
+
+            <h3>Version pessimiste (les coureurs sont encore dans la première moitié de course)</h3>
+
+            <ul>
+                <li>Distance parcourue: <span id="pess_dist_parcourue"></span></li>
+                <li>Temps restant (estimé): <span id="pess_temps_restant"></span></li>
+            </ul>
+
+            <table id="tab-passages"></table>
+        </div>
+
+        <div id="map"></div>
+
+        <div id="config">
+            <h3>Information et configuration</h3>
+            <button onclick="clear_state() ; save_state_to_local_storage() ; window.location.reload()">Effacer les points et config</button>
+            <br/>
+            Date de début : 
+            <input id="config-start" type="datetime-local" oninput="state.start = Date.parse(this.value) ; save_state_to_local_storage() ; window.location.reload()">
+        </div>
+    </body>
+</html>
+>>>>>>> 623cb1c (Fix timezone)
