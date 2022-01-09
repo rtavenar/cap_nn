@@ -24,7 +24,11 @@
           <th>Distance (pessimiste)</th>
           <th>Distance (optimiste)</th>
         </tr>
-        <tr v-for="r in tableRows" :key="r.ts" :class="{ depart: r.start }">
+        <tr
+          v-for="r in tableRows"
+          :key="r.ts"
+          :class="{ depart: r.start, current: r.ts === currentPointTimestamp }"
+        >
           <td>
             <i>(Départ)</i>
             {{ niceTimestamp(r.ts) }}
@@ -147,6 +151,7 @@ export default Vue.defineComponent({
       shareNewPoints: true,
       importSharedPoints: true,
     },
+    currentPointTimestamp: null,
     baseURL,
     testQueryFragmentToAdd: "?track=migoual-concept-race",
     testUrlsToShowOnError: [
@@ -322,6 +327,7 @@ export default Vue.defineComponent({
           // TODO check formats for lat, lon, ts
           // digest the query point, use timestamp as identifier
           let ts = guessTimestamp(p.at) / 1000;
+          this.currentPointTimestamp = ts;
           if (this.store.shareNewPoints) {
             await appendSharedContent(
               this.lskey,
@@ -356,6 +362,12 @@ export default Vue.defineComponent({
         this.store.points.sort(function (a, b) {
           return a.ts - b.ts;
         });
+
+        const sps = this.store.points;
+        if (this.currentPointTimestamp === null && sps.length > 0) {
+          this.currentPointTimestamp = sps[sps.length - 1].ts;
+        }
+
         return true;
       } else {
         this.statusErrorMessage =
@@ -396,5 +408,8 @@ td:empty {
 }
 tr:not(.depart) i {
   visibility: hidden;
+}
+tr.current td:first-of-type {
+  color: teal;
 }
 </style>
