@@ -144,8 +144,8 @@ export default Vue.defineComponent({
     store: {
       points: [],
       startInMilliseconds: null, // ms
-      shareNewPoints: false,
-      importSharedPoints: false,
+      shareNewPoints: true,
+      importSharedPoints: true,
     },
     baseURL,
     testQueryFragmentToAdd: "?track=migoual-concept-race",
