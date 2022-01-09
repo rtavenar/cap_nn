@@ -442,6 +442,9 @@ export default Vue.defineComponent({
 });
 </script>
 <style>
+body {
+  --map-height: 10em;
+}
 img.estimate {
   filter: hue-rotate(150deg);
 }
@@ -450,7 +453,7 @@ img.grayscale {
 }
 #map {
   resize: both;
-  height: 10em;
+  height: --var(--map-height);
   margin-top: 2em;
 }
 
