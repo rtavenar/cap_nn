@@ -170,7 +170,7 @@ export default Vue.defineComponent({
   },
   computed: {
     baseURLWithTrack() {
-      return this.baseURL + getURLParams().track
+      return this.baseURL + '?track=' + getURLParams().track
     },
     sharedURLlink() {
       return getProtectedTextURL(lskeyToDocid(this.lskey), false, false, true);
