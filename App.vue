@@ -453,7 +453,7 @@ img.grayscale {
 }
 #map {
   resize: both;
-  height: --var(--map-height);
+  height: var(--map-height);
   margin-top: 2em;
 }
 
