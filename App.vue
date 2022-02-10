@@ -94,6 +94,9 @@
       <button @click="store.points.splice(0, store.points.length)">
         Effacer les points (localement)
       </button>
+      <hr/>
+      Config SMS : <br/><code ref="sms">{{baseURLWithTrack}}&lat=%1$f&lon=%2$f&at=%3$ts</code>
+      <button @click="copy($refs.sms)">Copier dans le presse papier</button>
     </div>
   </div>
   <div v-else-if="status === 'loading'">
@@ -114,7 +117,6 @@
       v-model="testQueryFragmentToAdd"
       style="width: 40em"
     />
-    <br />
     <ul>
       <li>
         <a :href="baseURL + testQueryFragmentToAdd"
@@ -167,6 +169,9 @@ export default Vue.defineComponent({
     this.gpx = null;
   },
   computed: {
+    baseURLWithTrack() {
+      return this.baseURL + getURLParams().track
+    },
     sharedURLlink() {
       return getProtectedTextURL(lskeyToDocid(this.lskey), false, false, true);
     },
@@ -292,6 +297,10 @@ export default Vue.defineComponent({
       this.saveToLocalStorage(); // just to be sure, but it is probably ok with the watch
       this.drawMap();
       this.status = "ok";
+    },
+    async copy(ref) {
+      await navigator.clipboard.writeText(ref.textContent);
+      ref.classList.add("copied");
     },
     drawMap() {
       if (!document.getElementById("map")) {
@@ -477,5 +486,17 @@ tr:not(.depart) i {
 }
 tr.current td:first-of-type {
   color: teal;
+}
+.copied {
+  background: green;
+  color: white;
+}
+.copied::after {
+  content: "copied";
+  position: relative;
+  top: -1em;
+  border: 1px solid black;
+  background: yellow;
+  color: black;
 }
 </style>
