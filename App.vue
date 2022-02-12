@@ -452,7 +452,7 @@ export default Vue.defineComponent({
 </script>
 <style>
 body {
-  --map-height: 10em;
+  --map-height: 50vh;
 }
 img.estimate {
   filter: hue-rotate(150deg);
