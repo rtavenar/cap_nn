@@ -15,7 +15,7 @@
     </h1>
 
     <div v-if="debug.on">
-      DEBUG: <input type="range" v-model.number="debug.limitPointCount" min="0" max="20" /> {{ debug.limitPointCount }}
+      DEBUG: <input type="range" v-model.number="debug.limitPointCount" min="0" max="50" /> {{ debug.limitPointCount }}
     </div>
 
     <div id="found_tracks">
@@ -213,6 +213,34 @@ export default Vue.defineComponent({
         let p0 = track.points[0];
         res.push({ lat: p0.lat, lon: p0.lon, ts: this.start, start: true });
       }
+
+      const cdplus = compute_dplus_cumul(track)
+
+      // a list of lists of int (i.e., for each gps point, the indices of the possible track points)
+      let hypothesis = points.map(p => representerNearestPointsInTrack(p, track))
+
+      console.log("INIT")
+      hypothesis.forEach(e=>console.log(e))
+
+      hypothesis = hypothesis.map((h, i) => h.filter( ind => {
+        const p = points[i];
+        let elapsed = p.ts - this.start; // s
+        let v = track.distance.cumul[ind] / 1000 / (elapsed / 3600);
+        return v > 3 && v < 16;
+      }))
+
+      console.log("TOO FAST/SLOW")
+      hypothesis.forEach(e=>console.log(e))
+
+      {
+        const minH = hypothesis.map(h => Math.min(...h))
+        hypothesis = hypothesis.map((h, i) => h.filter(ind => i===hypothesis.length-1 || ind <= minH[i+1]))
+      }
+
+      console.log("BEFORE EARLIEST NEXT")
+      hypothesis.forEach(e=>console.log(e))
+
+      //return res
 
       let max_dist_first_half = -1;
       let min_dist_second_half = Infinity;

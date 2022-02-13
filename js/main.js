@@ -11,6 +11,39 @@ function parse_args() {
     return $_GET;
 }
 
+
+const argFact = (compareFn) => (array) => array.map((el, idx) => [el, idx]).reduce(compareFn)[1]
+const argMax = argFact((min, el) => (el[0] > min[0] ? el : min))
+const argMin = argFact((max, el) => (el[0] < max[0] ? el : max))
+const __gpxParserTool = new gpxParser()
+function distance(a, b) {
+    return __gpxParserTool.calcDistanceBetween(a, b);
+}
+function nearestPointInList(p, points) {
+    return argMin(points.map(pp => distance(p, pp)))
+}
+function representerNearestPointsInTrack(p, gpxTrack, factor=10) {
+    const points = gpxTrack.points
+    const iNearest = nearestPointInList(p, points);
+    const thr = factor * distance(p, points[iNearest]);
+    const res = [];
+
+    let wasClose = false;
+    let iClose = -1;
+    for (let i = 0; i < 1 + points.length; i++) {
+        const isClose = i < points.length && distance(p, points[i]) < thr;
+        if (wasClose !== isClose) {
+            if (isClose) {
+                iClose = i;
+            } else {
+                res.push(iClose + nearestPointInList(p, points.slice(iClose, i)));
+            }
+        }
+        wasClose = isClose;
+    }
+    return res
+}
+
 function nearest_point_in_track(lat, lon, array_of_points) {
     var min_dist = Infinity;
     var arg_min = -1;
@@ -37,6 +70,7 @@ function compute_dplus_cumul(gpx_track) {
             gpx_track.dplus_cumul.push(gpx_track.dplus_cumul[i - 1])
         }
     }
+    return gpx_track.dplus_cumul
 }
 
 function distance_covered(lat, lon, gpx_track) {
