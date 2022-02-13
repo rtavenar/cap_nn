@@ -350,10 +350,7 @@ export default Vue.defineComponent({
       let ts = this.currentPointTimestamp;
       for (let p of this.store.points) {
         let m = L.marker([p.lat, p.lon]).addTo(mymap);
-        m.bindTooltip(`
-                    ${new Date(p.ts * 1000)
-                      .toISOString()
-                      .replace(/(T|:\d\d\..*)/g, " ")}<br/>
+        m.bindTooltip(`${this.niceTimestamp(p.ts)}<br/>
                     Temps écoulé : <b>${time_to_string(p.ts - this.start)}</b>
                     `);
         if (p.ts !== ts) {
