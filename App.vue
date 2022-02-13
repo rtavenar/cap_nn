@@ -14,6 +14,10 @@
       <span v-if="lskey !== gpxURL"> ({{ lskey }})</span>
     </h1>
 
+    <div v-if="debug.on">
+      DEBUG: <input type="range" v-model.number="debug.limitPointCount" min="0" max="20" /> {{ debug.limitPointCount }}
+    </div>
+
     <div id="found_tracks">
       <h2><span id="track_name"></span> <span id="track_length"></span></h2>
       <table id="tab-passages">
@@ -153,6 +157,10 @@ export default Vue.defineComponent({
       shareNewPoints: true,
       importSharedPoints: true,
     },
+    debug: {
+      on: false,
+      limitPointCount: 999,
+    },
     currentPointTimestamp: null,
     baseURL,
     testQueryFragmentToAdd: "?track=migoual-concept-race",
@@ -196,6 +204,10 @@ export default Vue.defineComponent({
       const res = [];
       const track = this.gpx.tracks[this.gpxTrkid];
       let points = this.store.points;
+
+      if (this.debug.on && points.length > this.debug.limitPointCount) {
+          points = points.slice(0, this.debug.limitPointCount);
+      }
 
       {
         let p0 = track.points[0];
@@ -366,6 +378,9 @@ export default Vue.defineComponent({
     async digestURL() {
       let err = "Erreur de paramètres dans l'URL. <br/>";
       const p = getURLParams();
+      if ("debug" in p) {
+        this.debug.on = true;
+      }
       if ("track" in p) {
         const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
         // We use the gpxURL to allow following several races "at the same time"...
