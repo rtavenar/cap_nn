@@ -14,6 +14,8 @@
       <span v-if="lskey !== gpxURL"> ({{ lskey }})</span>
     </h1>
 
+    <div id="map"></div>
+
     <div v-if="debug.on">
       DEBUG: <input type="range" v-model.number="debug.limitPointCount" min="0" max="50" /> {{ debug.limitPointCount }}
     </div>
@@ -60,8 +62,6 @@
         </tr>
       </table>
     </div>
-
-    <div id="map"></div>
 
     <div id="config">
       <h3>Information et configuration</h3>
@@ -220,7 +220,8 @@ export default Vue.defineComponent({
       let hypothesis = points.map(p => representerNearestPointsInTrack(p, track))
 
       console.log("INIT")
-      hypothesis.forEach(e=>console.log(e))
+      console.log(JSON.stringify(hypothesis))
+      //hypothesis.forEach(e=>console.log(e))
 
       hypothesis = hypothesis.map((h, i) => h.filter( ind => {
         const p = points[i];
@@ -230,7 +231,8 @@ export default Vue.defineComponent({
       }))
 
       console.log("TOO FAST/SLOW")
-      hypothesis.forEach(e=>console.log(e))
+      console.log(JSON.stringify(hypothesis))
+      //hypothesis.forEach(e=>console.log(e))
 
       {
         const minH = hypothesis.map(h => Math.min(...h))
@@ -238,7 +240,8 @@ export default Vue.defineComponent({
       }
 
       console.log("BEFORE EARLIEST NEXT")
-      hypothesis.forEach(e=>console.log(e))
+      console.log(JSON.stringify(hypothesis))
+      //hypothesis.forEach(e=>console.log(e))
 
       //return res
 
