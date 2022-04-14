@@ -443,10 +443,15 @@ export default Vue.defineComponent({
           let ts = guessTimestamp(p.at) / 1000;
           this.currentPointTimestamp = ts;
           if (this.store.shareNewPoints) {
-            await appendSharedContent(
-              this.lskey,
-              this.niceTimestamp(ts) + "\n" + window.location.toString() + "\n"
-            );
+            try {
+              await appendSharedContent(
+                this.lskey,
+                this.niceTimestamp(ts) + "\n" + window.location.toString() + "\n"
+              );
+            } catch (e) {
+              // e.g. cors limitations
+              console.log("APPEND SHARED FAILED", e)
+            }
           }
           // avoid duplicates
           if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
@@ -459,18 +464,23 @@ export default Vue.defineComponent({
         }
         // import points from the remote pad
         if (this.store.importSharedPoints) {
-          let sharedContent = await getSharedContent(this.lskey);
-          for (let l of sharedContent
-            .split("\n")
-            .filter((l) => l.startsWith(this.baseURL))) {
-            // we redo mostly as above... some repetition
-            let p = getURLParams(new URL(l));
-            if (countKeysAmong(p, "lat", "lon", "at") == 3) {
-              let ts = guessTimestamp(p.at) / 1000;
-              if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
-                this.store.points.push(new Point(ts, p.lat, p.lon));
+          try {
+            let sharedContent = await getSharedContent(this.lskey);
+            for (let l of sharedContent
+              .split("\n")
+              .filter((l) => l.startsWith(this.baseURL))) {
+              // we redo mostly as above... some repetition
+              let p = getURLParams(new URL(l));
+              if (countKeysAmong(p, "lat", "lon", "at") == 3) {
+                let ts = guessTimestamp(p.at) / 1000;
+                if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
+                  this.store.points.push(new Point(ts, p.lat, p.lon));
+                }
               }
             }
+          } catch (e) {
+            // e.g. cors limitations
+            console.log("GET SHARED FAILED", e)
           }
         }
         // ensure points are sorted
