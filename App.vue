@@ -99,7 +99,7 @@
         Effacer les points (localement)
       </button>
       <hr/>
-      Config SMS : <br/><code ref="sms">{{baseURLWithTrack}}&lat=%1$f&lon=%2$f&at=%3$ts</code>
+      Config SMS : <br/><code ref="sms">{{baseURLWithTrack}}&lat=%1$.4f&lon=%2$.4f&at=%3$ts</code>
       <button @click="copy($refs.sms)">Copier dans le presse papier</button>
     </div>
   </div>
@@ -115,7 +115,7 @@
     Exemple de config SMS : <br /><code
       >{{
         baseURL
-      }}?track=migoual-concept-race&lat=%1$f&lon=%2$f&at=%3$ts&start=2022-07-09T06:03</code
+      }}?track=migoual-concept-race&lat=%1$.4f&lon=%2$.4f&at=%3$ts&start=2022-07-09T06:03</code
     >
     <br /><br />Exemples pour tester le multipoint : <br /><input
       v-model="testQueryFragmentToAdd"
