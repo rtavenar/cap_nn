@@ -22,13 +22,13 @@
 
     <div id="found_tracks">
       <h2><span id="track_name"></span> <span id="track_length"></span></h2>
-      <table id="tab-passages">
+      <table id="tab-passages" :class="tableClasses">
         <tr>
           <th>Heure</th>
           <th>Latitude</th>
           <th>Longitude</th>
-          <th>Distance (pessimiste)</th>
-          <th>Distance (optimiste)</th>
+          <th>Au pire</th>
+          <th>Au mieux</th>
         </tr>
         <tr
           v-for="r in tableRows"
@@ -197,6 +197,11 @@ export default Vue.defineComponent({
       },
     },
     // to display the table
+    tableClasses() {
+      return {
+        'hide-pessimistic': Math.min(...this.tableRows.map(r => r.distAlt === undefined)),
+      }
+    },
     tableRows() {
       if (this.status !== "ok") {
         return [];
@@ -218,82 +223,55 @@ export default Vue.defineComponent({
 
       // a list of lists of int (i.e., for each gps point, the indices of the possible track points)
       let hypothesis = points.map(p => representerNearestPointsInTrack(p, track))
+      let lastWithoutEmpty = hypothesis
+      const hasEmpty = () => Math.max(...hypothesis.map(h => h.length === 0))
+      const rememberIfNotEmpty = () => {
+        if (!hasEmpty()) {
+          lastWithoutEmpty = hypothesis
+        }
+      }
 
-      console.log("INIT")
-      console.log(JSON.stringify(hypothesis))
-      //hypothesis.forEach(e=>console.log(e))
-
+      //console.log("INIT")
+      //console.log(JSON.stringify(hypothesis))
+      
       hypothesis = hypothesis.map((h, i) => h.filter( ind => {
         const p = points[i];
         let elapsed = p.ts - this.start; // s
         let v = track.distance.cumul[ind] / 1000 / (elapsed / 3600);
-        return v > 3 && v < 16;
+        return true//v > 3 && v < 16;
       }))
+      rememberIfNotEmpty()
 
-      console.log("TOO FAST/SLOW")
-      console.log(JSON.stringify(hypothesis))
-      //hypothesis.forEach(e=>console.log(e))
-
+      //console.log("TOO FAST/SLOW")
+      //console.log(JSON.stringify(hypothesis))
+      
       {
         const minH = hypothesis.map(h => Math.min(...h))
         hypothesis = hypothesis.map((h, i) => h.filter(ind => i===hypothesis.length-1 || ind <= minH[i+1]))
       }
+      rememberIfNotEmpty()
 
-      console.log("BEFORE EARLIEST NEXT")
-      console.log(JSON.stringify(hypothesis))
-      //hypothesis.forEach(e=>console.log(e))
+      //console.log("BEFORE EARLIEST NEXT")
+      //console.log(JSON.stringify(hypothesis))
 
-      //return res
-
-      let max_dist_first_half = -1;
-      let min_dist_second_half = Infinity;
-      for (let i = 0; i < points.length; i++) {
-        let p = points[i];
-        let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000; // km
-        if (d_opt < min_dist_second_half) {
-          min_dist_second_half = d_opt;
+      lastWithoutEmpty.forEach((h, i) => {
+        const p = points[i]
+        const elapsed = p.ts - this.start // s
+        const row = { ...p, elapsed }
+        res.push(row)
+        let ind = h[h.length-1]
+        row.dist = track.distance.cumul[ind] / 1000 // km
+        row.vel = row.dist / (elapsed / 3600) // km/h
+        row.dpos = cdplus[ind]
+        if (h.length > 1) {
+          ind = h[0]
+          row.distAlt = track.distance.cumul[ind] / 1000 // km
+          row.velAlt = row.dist / (elapsed / 3600) // km/h
+          row.dposAlt = cdplus[ind]
         }
-      }
+      })
 
-      for (let i = 0; i < points.length; i++) {
-        let p = points[i];
-        let optimistic_is_plausible = true;
-        let pessimistic_is_plausible = true;
-
-        let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000; // km
-        let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000; // km
-        let deniv_opt = cumul_dplus_second_half(p.lat, p.lon, track);
-        let deniv_pess = cumul_dplus_first_half(p.lat, p.lon, track);
-        let elapsed = p.ts - this.start; // s
-
-        let v_opt = d_opt / (elapsed / 3600);
-        let v_pess = d_pess / (elapsed / 3600);
-
-        if (v_opt > 20 || min_dist_second_half < d_opt - 1) {
-          // -1 to keep some GPS error margin
-          optimistic_is_plausible = false;
-        }
-        if (d_pess > max_dist_first_half) {
-          max_dist_first_half = d_pess;
-        }
-        if (max_dist_first_half > d_pess + 1) {
-          // +1 to keep some GPS error margin
-          pessimistic_is_plausible = false;
-        }
-        let row = { ...p, elapsed };
-        res.push(row);
-        if (optimistic_is_plausible) {
-          row.dist = d_opt;
-          row.dpos = deniv_opt;
-          row.vel = v_opt;
-        }
-        if (pessimistic_is_plausible) {
-          row.distAlt = d_pess;
-          row.dposAlt = deniv_pess;
-          row.velAlt = v_pess;
-        }
-      }
-      return res;
+      return res
     },
   },
   watch: {
@@ -519,6 +497,11 @@ img.grayscale {
   margin-top: 2em;
 }
 
+table.hide-pessimistic td:nth-of-type(4),
+table.hide-pessimistic th:nth-of-type(4)
+{
+  display: none;
+}
 table,
 th,
 td {
