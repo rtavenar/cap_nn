@@ -271,7 +271,7 @@ export default Vue.defineComponent({
         if (h.length > 1) {
           ind = h[0]
           row.distAlt = track.distance.cumul[ind] / 1000 // km
-          row.velAlt = row.dist / (elapsed / 3600) // km/h
+          row.velAlt = row.distAlt / (elapsed / 3600) // km/h
           row.dposAlt = cdplus[ind]
         }
       })
