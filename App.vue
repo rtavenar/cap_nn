@@ -17,7 +17,10 @@
     <div id="map"></div>
 
     <div v-if="debug.on">
-      DEBUG: <input type="range" v-model.number="debug.limitPointCount" min="0" max="50" /> {{ debug.limitPointCount }}
+      DEBUG:
+      #points = {{ debug.limitPointCount }} <input type="range" v-model.number="debug.limitPointCount" min="0" max="50" />
+      // min speed: <input v-model.number="minSpeed" />
+      // max speed: <input v-model.number="maxSpeed" />
     </div>
 
     <div id="found_tracks">
@@ -161,6 +164,8 @@ export default Vue.defineComponent({
       on: false,
       limitPointCount: 999,
     },
+    minSpeed: 3,
+    maxSpeed: 16,
     currentPointTimestamp: null,
     baseURL,
     testQueryFragmentToAdd: "?track=migoual-concept-race",
@@ -238,7 +243,7 @@ export default Vue.defineComponent({
         const p = points[i];
         let elapsed = p.ts - this.start; // s
         let v = track.distance.cumul[ind] / 1000 / (elapsed / 3600);
-        return true//v > 3 && v < 16;
+        return v > this.minSpeed && v < this.maxSpeed;
       }))
       rememberIfNotEmpty()
 
