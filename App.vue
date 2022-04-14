@@ -30,8 +30,8 @@
           <th>Heure</th>
           <th>Latitude</th>
           <th>Longitude</th>
-          <th>Au pire</th>
-          <th>Au mieux</th>
+          <th v-if="tableHasPessimisticColumn">Au pire</th>
+          <th :colspan="tableHasPessimisticColumn ? 1 : 2">Au mieux</th>
         </tr>
         <tr
           v-for="r in tableRows"
@@ -47,21 +47,18 @@
           <td v-if="r.distAlt">
             {{ Math.round(r.distAlt) }}km, {{ Math.round(r.dposAlt) }}D+ ({{
               r.velAlt.toFixed(1)
-            }}km/h) ({{
+            }}km/h) (eﬀ. {{
               (((r.distAlt + r.dposAlt / 150) / r.elapsed) * 3600).toFixed(1)
-            }}
-            strain/h)
+            }})
           </td>
-          <td v-else></td>
-          <td v-if="r.dist">
+          <td v-if="r.dist" :colspan="r.distAlt ? 1 : 2">
             {{ Math.round(r.dist) }}km, {{ Math.round(r.dpos) }}D+ ({{
               r.vel.toFixed(1)
-            }}km/h) ({{
+            }}km/h) (eﬀ. {{
               (((r.dist + r.dpos / 150) / r.elapsed) * 3600).toFixed(1)
-            }}
-            strain/h)
+            }})
           </td>
-          <td v-else></td>
+          <td v-else :colspan="2"></td>
         </tr>
       </table>
     </div>
@@ -202,10 +199,8 @@ export default Vue.defineComponent({
       },
     },
     // to display the table
-    tableClasses() {
-      return {
-        'hide-pessimistic': Math.min(...this.tableRows.map(r => r.distAlt === undefined)),
-      }
+    tableHasPessimisticColumn() {
+      return Math.max(...this.tableRows.map(r => r.distAlt !== undefined))
     },
     tableRows() {
       if (this.status !== "ok") {
@@ -502,11 +497,6 @@ img.grayscale {
   margin-top: 2em;
 }
 
-table.hide-pessimistic td:nth-of-type(4),
-table.hide-pessimistic th:nth-of-type(4)
-{
-  display: none;
-}
 table,
 th,
 td {
