@@ -65,6 +65,9 @@
       <p>
         Selon le gpx, au total, {{distTotal.toFixed(1)}}km, {{dposTotal}}D+.
       </p>
+      <p v-if="eta">
+        Estimation de l'arrivée en maintenant le rythme actuel : {{ niceTimestamp(eta) }}. 
+      </p>
     </div>
 
     <div id="config">
@@ -230,6 +233,15 @@ export default Vue.defineComponent({
     // to display the table
     tableHasPessimisticColumn() {
       return Math.max(...this.tableRows.map(r => r.distAlt !== undefined))
+    },
+    eta() {
+      if (this.tableRows.length === 0) {
+        return null;
+      }
+      const r = this.tableRows[0]
+      const totalStrain = this.distTotal + this.dposTotal / 150
+      const currentStrainPerTime = (r.dist + r.dpos / 150) / r.elapsed
+      return this.start + totalStrain / currentStrainPerTime
     },
     tableRows() {
       if (this.status !== "ok") {
