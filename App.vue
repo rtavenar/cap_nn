@@ -61,6 +61,9 @@
           <td v-else :colspan="2"></td>
         </tr>
       </table>
+      <p>
+        Selon le gpx, au total, {{distTotal.toFixed(1)}}km, {{dposTotal}}D+.
+      </p>
     </div>
 
     <div id="config">
@@ -153,6 +156,8 @@ export default Vue.defineComponent({
     gpxURL: null,
     //gpx: non reactive
     gpxTrkid: null,
+    distTotal: 0,
+    dposTotal: 0,
     lskey: null,
     saveToLocalStorageOnStoreChange: true,
     store: {
@@ -517,6 +522,13 @@ export default Vue.defineComponent({
         const sps = this.store.points;
         if (this.currentPointTimestamp === null && sps.length > 0) {
           this.currentPointTimestamp = sps[sps.length - 1].ts;
+        }
+
+        { // compute track total stats
+          const track = this.gpx.tracks[this.gpxTrkid];
+          const cdplus = compute_dplus_cumul(track);
+          this.distTotal = track.distance.cumul[track.distance.cumul.length-1] / 1000;
+          this.dposTotal = cdplus[cdplus.length-1];
         }
 
         return true;
