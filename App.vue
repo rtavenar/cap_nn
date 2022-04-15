@@ -36,7 +36,8 @@
         <tr
           v-for="r in tableRows"
           :key="r.ts"
-          :class="{ depart: r.start, current: r.ts === currentPointTimestamp }"
+          :class="{ depart: r.start, current: r.ts === currentPointTimestamp, selected: r.ts === selectedPointTimestamp }"
+          @click="selectedPointTimestamp = r.ts"
         >
           <td>
             <i>(Départ)</i>
@@ -155,6 +156,7 @@ export default Vue.defineComponent({
     statusErrorMessage: "Unknown error",
     gpxURL: null,
     //gpx: non reactive
+    //pointMarkers: non reactive
     gpxTrkid: null,
     distTotal: 0,
     dposTotal: 0,
@@ -173,6 +175,7 @@ export default Vue.defineComponent({
     minSpeed: 3,
     maxSpeed: 16,
     currentPointTimestamp: null,
+    selectedPointTimestamp: null,
     baseURL,
     smsWithStart: true,
     smsWithHour: true,
@@ -336,6 +339,15 @@ export default Vue.defineComponent({
         }
       },
     },
+    selectedPointTimestamp() {
+      if (this.pointMarkers) {
+        for (let i in this.pointMarkers) {
+          let isSel = this.store.points[i].ts === this.selectedPointTimestamp;
+          this.pointMarkers[i]._icon.style.outline = isSel ? "3px solid red" : null;
+          //this.pointMarkers[i]._icon.classList.toggle('selected-marker', isSel);
+        }
+      }
+    },
   },
   mounted() {
     // for debugging, make it accessible as "vm"
@@ -383,7 +395,7 @@ export default Vue.defineComponent({
         return;
       }
       const track = this.gpx.tracks[this.gpxTrkid];
-      let mymap = L.map("map");
+      const mymap = L.map("map");
 
       new ResizeObserver(() => {
         mymap.invalidateSize();
@@ -422,11 +434,16 @@ export default Vue.defineComponent({
 
       let end = Math.max(...this.store.points.map((p) => p.ts));
       let ts = this.currentPointTimestamp;
+      this.pointMarkers = []
       for (let p of this.store.points) {
         let m = L.marker([p.lat, p.lon]).addTo(mymap);
+        this.pointMarkers.push(m)
         m.bindTooltip(`${this.niceTimestamp(p.ts)}<br/>
                     Temps écoulé : <b>${time_to_string(p.ts - this.start)}</b>
                     `);
+        m.on("click", () => {
+          this.selectedPointTimestamp = p.ts;
+        });
         if (p.ts !== ts) {
           m._icon.style.filter = `grayscale(${
             80 - (80 * (p.ts - this.start)) / (end - this.start)
@@ -574,6 +591,9 @@ td:empty {
 }
 tr:not(.depart) i {
   visibility: hidden;
+}
+tr.selected td:first-of-type {
+  background: #FCC;
 }
 tr.current td:first-of-type {
   color: teal;
