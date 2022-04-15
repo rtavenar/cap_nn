@@ -227,7 +227,6 @@ export default Vue.defineComponent({
       if (this.status !== "ok") {
         return [];
       }
-      const res = [];
       const track = this.gpx.tracks[this.gpxTrkid];
       let points = this.store.points;
 
@@ -235,15 +234,10 @@ export default Vue.defineComponent({
           points = points.slice(0, this.debug.limitPointCount);
       }
 
-      {
-        let p0 = track.points[0];
-        res.push({ lat: p0.lat, lon: p0.lon, ts: this.start, start: true });
-      }
-
       const cdplus = compute_dplus_cumul(track)
 
       // a list of lists of int (i.e., for each gps point, the indices of the possible track points)
-      let hypothesis = points.map(p => representerNearestPointsInTrack(p, track))
+      let hypothesis = points.map(p => representerNearestPointsInTrack(p, track, 1.5, 30))
       let lastWithoutEmpty = hypothesis
       const hasEmpty = () => Math.max(...hypothesis.map(h => h.length === 0))
       const rememberIfNotEmpty = () => {
@@ -255,18 +249,38 @@ export default Vue.defineComponent({
       //console.log("INIT")
       //console.log(JSON.stringify(hypothesis))
       
+      // remove any candidate that does not comply with the speed limits
       hypothesis = hypothesis.map((h, i) => h.filter( ind => {
         const p = points[i];
         let elapsed = p.ts - this.start; // s
+        // we keep the points acquired before the start but we will need to handle them
+        if (elapsed < 0) {
+          return true;
+        }
         let v = track.distance.cumul[ind] / 1000 / (elapsed / 3600);
+        // we ignore the lower speed limit at the beginning (30min), in case the race starts a little late
+        if (elapsed < 30*60) {
+          return v < this.maxSpeed;
+        }
         return v > this.minSpeed && v < this.maxSpeed;
       }))
+      rememberIfNotEmpty()
+
+      // for the before-the-start points, we fake their closest index as being the start point
+      hypothesis = hypothesis.map((h, i) => {
+        const p = points[i];
+        let elapsed = p.ts - this.start; // s
+        if (elapsed < 0) {
+          return [0]
+        }
+        return h
+      })
       rememberIfNotEmpty()
 
       //console.log("TOO FAST/SLOW")
       //console.log(JSON.stringify(hypothesis))
       
-      {
+      { // remove all incoherent points (that come before in the track than the previous one)
         const minH = hypothesis.map(h => Math.min(...h))
         hypothesis = hypothesis.map((h, i) => h.filter(ind => i===hypothesis.length-1 || ind <= minH[i+1]))
       }
@@ -275,6 +289,8 @@ export default Vue.defineComponent({
       //console.log("BEFORE EARLIEST NEXT")
       //console.log(JSON.stringify(hypothesis))
 
+      // fill in the information for the rendering
+      let res = [];
       lastWithoutEmpty.forEach((h, i) => {
         const p = points[i]
         const elapsed = p.ts - this.start // s
@@ -292,6 +308,17 @@ export default Vue.defineComponent({
         }
       })
 
+
+      { // insert fake (start) point 
+        let p0 = track.points[0];
+        res = [
+          ...res.filter(p => p.elapsed <= 0).map(p => ({...p, start: true})),
+          { lat: p0.lat, lon: p0.lon, ts: this.start, start: true },
+          ...res.filter(p => p.elapsed > 0),
+        ]
+      }
+
+      res.reverse() // most recent on top to avoid needing to scroll
       return res
     },
   },

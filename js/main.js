@@ -22,10 +22,10 @@ function distance(a, b) {
 function nearestPointInList(p, points) {
     return argMin(points.map(pp => distance(p, pp)))
 }
-function representerNearestPointsInTrack(p, gpxTrack, factor=10) {
+function representerNearestPointsInTrack(p, gpxTrack, factor, noiseInMeters) {
     const points = gpxTrack.points
     const iNearest = nearestPointInList(p, points);
-    const thr = factor * distance(p, points[iNearest]);
+    const thr = noiseInMeters + factor * distance(p, points[iNearest]);
     const res = [];
 
     let wasClose = false;
