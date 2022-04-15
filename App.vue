@@ -100,8 +100,10 @@
       </button>
       <hr/>
       Config SMS
-      <input type="checkbox" v-model="smsWithStart" title="Avec heure départ"/>
-      <br/><code ref="sms">{{smsURL}}</code>
+      <input type="checkbox" v-model="smsWithStart" title="Lien avec heure départ"/>
+      <input type="checkbox" v-model="smsWithHour" title="Heure du SMS"/>
+      <input type="checkbox" v-model="smsWithGenericLink" title="Ajout lien générique"/>
+      <br/><pre><code ref="sms">{{smsURL}}</code></pre>
       <button @click="copy($refs.sms)">Copier dans le presse papier</button>
     </div>
   </div>
@@ -168,6 +170,8 @@ export default Vue.defineComponent({
     currentPointTimestamp: null,
     baseURL,
     smsWithStart: true,
+    smsWithHour: true,
+    smsWithGenericLink: true,
     testQueryFragmentToAdd: "?track=migoual-concept-race",
     testUrlsToShowOnError: [
       "&lat=44.12433&lon=3.13856&at=2022-01-05T07:33",
@@ -190,6 +194,12 @@ export default Vue.defineComponent({
       res += ',%1$.4f,%2$.4f,%3$ts'
       if (this.smsWithStart && this.start) {
         res += `,${this.start}`
+      }
+      if (this.smsWithHour) {
+        res += '\n(%3$tT)'
+      }
+      if (this.smsWithGenericLink) {
+        res += '\nhttp://maps.apple.com/?ll=%1$.4f,%2$.4f'
       }
       return res
     },
