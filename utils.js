@@ -22,7 +22,20 @@ function guessTimestamp(s) {
 
 function getURLParams(url = undefined) {
   const urlSearchParams = new URLSearchParams((url ?? window.location).search);
-  return Object.fromEntries(urlSearchParams.entries());
+  const urlObject = Object.fromEntries(urlSearchParams.entries());
+  const shortcuts = {
+    A: 'track lat lon at start',
+  };
+  const res = {};
+  for (let s in shortcuts) {
+    if (s in urlObject) {
+      const keys = shortcuts[s].split(/ /g);
+      Object.assign(res, Object.fromEntries(urlObject[s].split(/,/g).map((v,i) => [keys[i], v])));
+      delete urlObject[s];
+    }
+  }
+  Object.assign(res, urlObject);
+  return res;
 }
 
 // Escape text so that it can be used safely as an html content
