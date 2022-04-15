@@ -99,7 +99,9 @@
         Effacer les points (localement)
       </button>
       <hr/>
-      Config SMS : <br/><code ref="sms">{{baseURLWithTrack}}&lat=%1$.4f&lon=%2$.4f&at=%3$ts</code>
+      Config SMS
+      <input type="checkbox" v-model="smsWithStart" title="Avec heure départ"/>
+      <br/><code ref="sms">{{smsURL}}</code>
       <button @click="copy($refs.sms)">Copier dans le presse papier</button>
     </div>
   </div>
@@ -115,7 +117,7 @@
     Exemple de config SMS : <br /><code
       >{{
         baseURL
-      }}?track=migoual-concept-race&lat=%1$.4f&lon=%2$.4f&at=%3$ts&start=2022-07-09T06:03</code
+      }}?A=migoual-concept-race,%1$.4f,%2$.4f,%3$ts,2022-07-09T06:03</code
     >
     <br /><br />Exemples pour tester le multipoint : <br /><input
       v-model="testQueryFragmentToAdd"
@@ -165,6 +167,7 @@ export default Vue.defineComponent({
     maxSpeed: 16,
     currentPointTimestamp: null,
     baseURL,
+    smsWithStart: true,
     testQueryFragmentToAdd: "?track=migoual-concept-race",
     testUrlsToShowOnError: [
       "&lat=44.12433&lon=3.13856&at=2022-01-05T07:33",
@@ -179,8 +182,16 @@ export default Vue.defineComponent({
     this.gpx = null;
   },
   computed: {
-    baseURLWithTrack() {
-      return this.baseURL + '?track=' + getURLParams().track
+    baseURLWithATrack() {
+      return this.baseURL + '?A=' + getURLParams().track
+    },
+    smsURL() {
+      let res = this.baseURLWithATrack
+      res += ',%1$.4f,%2$.4f,%3$ts'
+      if (this.smsWithStart && this.start) {
+        res += `,${this.start}`
+      }
+      return res
     },
     sharedURLlink() {
       return getProtectedTextURL(lskeyToDocid(this.lskey), false, false, true);
