@@ -27,6 +27,7 @@ function getURLParams(url = undefined) {
     A: 'track lat lon at start',
   };
   const res = {};
+  // consume possible shortcuts
   for (let s in shortcuts) {
     if (s in urlObject) {
       const keys = shortcuts[s].split(/ /g);
@@ -34,7 +35,16 @@ function getURLParams(url = undefined) {
       delete urlObject[s];
     }
   }
+  // save other params
   Object.assign(res, urlObject);
+  // compact shortcut to specify lskey directly in track
+  if ((res.track ?? '').indexOf('@') !== -1) {
+    const [tr, ...rest] = res.track.split('@');
+    res.track = tr;
+    if (! res.lskey) {
+      res.lskey = `hash/${tr}/${rest.join('_')}`
+    }
+  }
   return res;
 }
 

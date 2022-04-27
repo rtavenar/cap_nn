@@ -476,6 +476,7 @@ export default Vue.defineComponent({
         const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
         // We use the gpxURL to allow following several races "at the same time"...
         // We also allow a lskey=... url param to allow following several runners in the same race
+        // NB: see param parsing for short notation of gpxURL+lskey
         this.lskey = p.lskey ?? gpxURL;
         this.maybeLoadFromLocalStorage();
         this.gpxTrkid = p.trkid ?? 0;
