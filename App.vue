@@ -368,6 +368,39 @@ export default Vue.defineComponent({
     this.asyncInit();
   },
   methods: {
+    estimateAsTooltip(ll) {
+      if (this.tableRows.length === 0 || this.tableRows[0].dist === 0) {
+        return null;
+      }
+
+      const track = this.gpx.tracks[this.gpxTrkid];
+      const cdplus = compute_dplus_cumul(track)
+      const nearests = representerNearestPointsInTrack({lat:ll.lat, lon:ll.lng}, track, 1.5, 30)
+      const strains = nearests.map(i => track.distance.cumul[i] / 1000 + cdplus[i] / 150)
+      const getStrain = r => r.start ? 0 : r.dist + r.dpos / 150
+      const times = strains.map(s => {
+        let iafter = this.tableRows.length - 1
+        for (; iafter >= 0 ; iafter--) {
+          if (s < this.tableRows[iafter].dist + this.tableRows[iafter].dpos / 150) {
+            break
+          }
+        }
+        if (iafter === -1) {
+          const r = this.tableRows[0]
+          const currentStrainPerTime = getStrain(r) / r.elapsed
+          return this.start + s / currentStrainPerTime
+        } else {
+          const r1 = this.tableRows[iafter+1]
+          const r2 = this.tableRows[iafter]
+          const s1 = getStrain(r1)
+          const s2 = getStrain(r2)
+          const t1 = r1.elapsed || 0
+          const t2 = r2.elapsed || 0
+          return this.start + t1 + (s-s1)/(s2-s1) * (t2-t1)
+        }
+      })
+      return times.map(t => this.niceTimestamp(t)).join("<br/>")
+    },
     niceTimestamp(s) {
       //new Date(s * 1000).toLocaleString();
       let str = timestampToDatetimeInputString(s * 1000);
@@ -433,7 +466,7 @@ export default Vue.defineComponent({
         let ll = ev.latlng;
         let m = L.marker(ll).addTo(mymap);
         m._icon.classList.add("estimate");
-        m.bindTooltip("TODO estimate");
+        m.bindTooltip(this.estimateAsTooltip(ll));
         //m.bindTooltip(estimate_to_html(estimate_progress(ll))) // TODO
         m.on("click", () => {
           m.remove();
