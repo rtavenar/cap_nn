@@ -210,7 +210,7 @@ export default Vue.defineComponent({
         res += '\n(%3$tT)'
       }
       if (this.smsWithGenericLink) {
-        res += '\nhttp://maps.apple.com/?ll=%1$.4f,%2$.4f'
+        res += '\nhttp://maps.google.com/?ll=%1$.4f,%2$.4f'
       }
       return res
     },
