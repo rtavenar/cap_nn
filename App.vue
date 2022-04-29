@@ -466,7 +466,7 @@ export default Vue.defineComponent({
         let ll = ev.latlng;
         let m = L.marker(ll).addTo(mymap);
         m._icon.classList.add("estimate");
-        m.bindTooltip(this.estimateAsTooltip(ll));
+        m.bindTooltip(this.estimateAsTooltip(ll), {permanent: true});
         //m.bindTooltip(estimate_to_html(estimate_progress(ll))) // TODO
         m.on("click", () => {
           m.remove();
