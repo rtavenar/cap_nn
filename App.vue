@@ -63,7 +63,7 @@
         </tr>
       </table>
       <p>
-        Selon le gpx, au total, {{distTotal.toFixed(1)}}km, {{dposTotal}}D+.
+        Selon le gpx, au total, {{distTotal.toFixed(1)}}km, {{dposTotal.toFixed(0)}}D+.
       </p>
       <p v-if="eta">
         Estimation de l'arrivée en maintenant le rythme actuel : {{ niceTimestamp(eta) }}. 
