@@ -48,22 +48,22 @@
           <td v-if="r.distAlt">
             {{ Math.round(r.distAlt) }}km, {{ Math.round(r.dposAlt) }}D+ ({{
               r.velAlt.toFixed(1)
-            }}km/h) (eﬀ. {{
+            }}km/h) ({{
               (((r.distAlt + r.dposAlt / 150) / r.elapsed) * 3600).toFixed(1)
-            }})
+            }}{{ff}}/h)
           </td>
           <td v-if="r.dist" :colspan="r.distAlt ? 1 : 2">
             {{ Math.round(r.dist) }}km, {{ Math.round(r.dpos) }}D+ ({{
               r.vel.toFixed(1)
-            }}km/h) (eﬀ. {{
+            }}km/h) ({{
               (((r.dist + r.dpos / 150) / r.elapsed) * 3600).toFixed(1)
-            }})
+            }}{{ff}}/h)
           </td>
           <td v-else :colspan="2"></td>
         </tr>
       </table>
       <p>
-        Selon le gpx, au total, {{distTotal.toFixed(1)}}km, {{dposTotal.toFixed(0)}}D+.
+        Selon le gpx, au total, {{cdsText(distTotal, dposTotal)}}.
       </p>
       <p v-if="eta">
         Estimation de l'arrivée en maintenant le rythme actuel : {{ niceTimestamp(eta) }}. 
@@ -155,6 +155,7 @@ let baseURL = window.location.origin + window.location.pathname;
 
 export default Vue.defineComponent({
   data: () => ({
+    ff: "🔥",
     status: "none",
     statusErrorMessage: "Unknown error",
     gpxURL: null,
@@ -368,17 +369,21 @@ export default Vue.defineComponent({
     this.asyncInit();
   },
   methods: {
+    cdsText(dist, dpos) {
+      const eff = dist + dpos / 150;
+      return `${dist.toFixed(1)}km, ${dpos.toFixed(0)}D+ (${eff.toFixed(0)}${this.ff})`;
+    },
     estimateAsTooltip(ll) {
-      if (this.tableRows.length === 0 || this.tableRows[0].dist === 0) {
-        return null;
-      }
-
       const track = this.gpx.tracks[this.gpxTrkid];
       const cdplus = compute_dplus_cumul(track)
       const nearests = representerNearestPointsInTrack({lat:ll.lat, lon:ll.lng}, track, 1.5, 30)
-      const strains = nearests.map(i => track.distance.cumul[i] / 1000 + cdplus[i] / 150)
+      const strains = nearests.map(i => [i, track.distance.cumul[i] / 1000 + cdplus[i] / 150])
       const getStrain = r => r.start ? 0 : r.dist + r.dpos / 150
-      const times = strains.map(s => {
+      console.log(this.tableRows.length, this.tableRows[0])
+      if (this.tableRows.length === 0 || ! this.tableRows[0].dist) {
+        return nearests.map(i => this.cdsText(track.distance.cumul[i] / 1000, cdplus[i])).join("<br/>");
+      }
+      const times = strains.map(([i,s]) => {
         let iafter = this.tableRows.length - 1
         for (; iafter >= 0 ; iafter--) {
           if (s < this.tableRows[iafter].dist + this.tableRows[iafter].dpos / 150) {
@@ -388,7 +393,7 @@ export default Vue.defineComponent({
         if (iafter === -1) {
           const r = this.tableRows[0]
           const currentStrainPerTime = getStrain(r) / r.elapsed
-          return this.start + s / currentStrainPerTime
+          return [i, this.start + s / currentStrainPerTime]
         } else {
           const r1 = this.tableRows[iafter+1]
           const r2 = this.tableRows[iafter]
@@ -396,10 +401,10 @@ export default Vue.defineComponent({
           const s2 = getStrain(r2)
           const t1 = r1.elapsed || 0
           const t2 = r2.elapsed || 0
-          return this.start + t1 + (s-s1)/(s2-s1) * (t2-t1)
+          return [i, this.start + t1 + (s-s1)/(s2-s1) * (t2-t1)]
         }
       })
-      return times.map(t => this.niceTimestamp(t)).join("<br/>")
+      return times.map(([i,t]) => this.niceTimestamp(t)+"<br/> └─ "+this.cdsText(track.distance.cumul[i] / 1000, cdplus[i])).join("<br/>")
     },
     niceTimestamp(s) {
       //new Date(s * 1000).toLocaleString();
