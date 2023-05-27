@@ -60,14 +60,23 @@ function nearest_point_in_track(lat, lon, array_of_points) {
 
 function compute_dplus_cumul(gpx_track) {
     gpx_track.dplus_cumul = [0];
-    for (let i=1; i<gpx_track.points.length; i++) {
-        let p_prev = gpx_track.points[i - 1];
+    let i = 1;
+    let p_prev = gpx_track.points[i - 1];
+    while (gpx_track.points[i-1].ele === null) {
+        gpx_track.dplus_cumul.push(0);
+        i++;
+    }
+    p_prev = gpx_track.points[i - 1];
+    for (; i<gpx_track.points.length; i++) {
         let p = gpx_track.points[i];
 
         if (p.ele > p_prev.ele) {
             gpx_track.dplus_cumul.push(gpx_track.dplus_cumul[i - 1] + p.ele - p_prev.ele)
         } else {
             gpx_track.dplus_cumul.push(gpx_track.dplus_cumul[i - 1])
+        }
+        if (gpx_track.points[i].ele !== null) {
+            p_prev = gpx_track.points[i];
         }
     }
     return gpx_track.dplus_cumul
