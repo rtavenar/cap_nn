@@ -88,7 +88,7 @@ function distance_covered(lat, lon, gpx_track) {
 }
 
 function cumul_dplus(lat, lon, gpx_track) {
-    if (!Object.keys(gpx_track).includes("dplus")) {
+    if (!Object.keys(gpx_track).includes("dplus_cumul")) {
         compute_dplus_cumul(gpx_track);
     }
     let i = nearest_point_in_track(lat, lon, gpx_track.points);
@@ -108,7 +108,7 @@ function distance_covered_second_half(lat, lon, gpx_track) {
 }
 
 function cumul_dplus_first_half(lat, lon, gpx_track) {
-    if (!Object.keys(gpx_track).includes("dplus")) {
+    if (!Object.keys(gpx_track).includes("dplus_cumul")) {
         compute_dplus_cumul(gpx_track);
     }
     let half = Math.floor(gpx_track.points.length / 2);
@@ -117,7 +117,7 @@ function cumul_dplus_first_half(lat, lon, gpx_track) {
 }
 
 function cumul_dplus_second_half(lat, lon, gpx_track) {
-    if (!Object.keys(gpx_track).includes("dplus")) {
+    if (!Object.keys(gpx_track).includes("dplus_cumul")) {
         compute_dplus_cumul(gpx_track);
     }
     let half = Math.floor(gpx_track.points.length / 2);
