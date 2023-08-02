@@ -16,6 +16,12 @@
 
     <div id="map"></div>
 
+    <div v-if="debug.on" id="debug-location">
+      <button @click="contributeDeviceLocation()">Contibute location</button>
+    </div>
+    <ul v-if="debug.on" id="debug-log">
+      <li v-for="l in debug.log">{{l}}</li>
+    </ul>
     <div v-if="debug.on">
       DEBUG:
       #points = {{ debug.limitPointCount }} <input type="range" v-model.number="debug.limitPointCount" min="0" max="50" />
@@ -175,6 +181,7 @@ export default Vue.defineComponent({
     debug: {
       on: false,
       limitPointCount: 999,
+      log: [],
     },
     minSpeed: 3,
     maxSpeed: 16,
@@ -606,6 +613,25 @@ export default Vue.defineComponent({
         return false;
       }
     },
+    contributeURL(lat, lon, ts) {
+      let res = this.baseURLWithATrack
+      res += `,${lat.toFixed(4)},${lon.toFixed(4)},${ts}`
+      return res
+    },
+    async contributeDeviceLocation() {
+      try {
+        const pos = await getCurrentPosition({ /*enableHighAccuracy: true <- timeouting in firefox mobile...,*/ timeout: 15000, maximumAge: 10000 });
+        const ts = Math.round(pos.timestamp/1000)
+        const url = this.contributeURL(pos.coords.latitude, pos.coords.longitude, ts)
+        this.debug.log.push(url)
+        await appendSharedContent(
+          this.lskey,
+          this.niceTimestamp(ts) + "\n" + url + "\n"
+        )
+      } catch (e) {
+        this.debug.log.push(safeHTMLText(e.message))
+      };
+    },
   },
 });
 </script>
@@ -660,5 +686,10 @@ tr.current td:first-of-type {
   border: 1px solid black;
   background: yellow;
   color: black;
+}
+#debug-location button {
+  padding: 1em;
+  font-size: 30px;
+  margin: 0 1em;
 }
 </style>

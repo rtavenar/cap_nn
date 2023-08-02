@@ -157,3 +157,12 @@ function asyncComponent(relativePath) {
     return loadModule("./" + relativePath, vueSfcLoaderOptions);
   });
 }
+function getCurrentPosition(options) {
+  return new Promise(function (resolve, reject) {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    } else {
+      reject('Geolocation not available in navigator');
+    }
+  });
+}
