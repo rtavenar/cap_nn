@@ -1,5 +1,14 @@
 <template>
-  <div v-if="status === 'ok'">
+  <div v-if="status === 'contrib'">
+    <div id="contrib-location">
+      <button @click="contributeDeviceLocation()">Contibute location <span v-if="lskey"> ({{ lskey }})</span></button>
+      <code>{{ gpxURL }}</code>
+    </div>
+    <ul id="debug-log">
+      <li v-for="l in debug.log">{{l}}</li>
+    </ul>
+  </div>
+  <div v-else-if="status === 'ok'">
     <page-title
       :v="
         (lskey !== gpxURL ? '(' + lskey + ') ' : '') +
@@ -16,9 +25,6 @@
 
     <div id="map"></div>
 
-    <div v-if="debug.on" id="debug-location">
-      <button @click="contributeDeviceLocation()">Contibute location</button>
-    </div>
     <ul v-if="debug.on" id="debug-log">
       <li v-for="l in debug.log">{{l}}</li>
     </ul>
@@ -433,7 +439,12 @@ export default Vue.defineComponent({
       localStorage.setItem(k, JSON.stringify(this.store));
     },
     async asyncInit() {
-      if (!(await this.digestURL())) {
+      const st = await this.digestURL();
+      if (typeof st === 'string') {
+        this.status = st;
+        return;
+      }
+      if (st === false) {
         this.status = "error";
         return;
       }
@@ -516,6 +527,12 @@ export default Vue.defineComponent({
       const p = getURLParams();
       if ("debug" in p) {
         this.debug.on = true;
+      }
+      if ("contrib" in p) {
+        const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
+        this.lskey = p.lskey ?? gpxURL; // also used for protectedtext sharing
+        this.gpxURL = gpxURL;
+        return "contrib";
       }
       if ("track" in p) {
         const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
@@ -627,7 +644,11 @@ export default Vue.defineComponent({
         await appendSharedContent(
           this.lskey,
           this.niceTimestamp(ts) + "\n" + url + "\n"
-        )
+        );
+        if (this.debug.log.slice(-1)[0] === url) {
+          this.debug.log.splice(-1, 1);
+        }
+        this.debug.log.push("ok... "+url)
       } catch (e) {
         this.debug.log.push(safeHTMLText(e.message))
       };
@@ -687,7 +708,7 @@ tr.current td:first-of-type {
   background: yellow;
   color: black;
 }
-#debug-location button {
+#contrib-location button {
   padding: 1em;
   font-size: 30px;
   margin: 0 1em;

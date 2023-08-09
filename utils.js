@@ -1,6 +1,9 @@
 // TODO make it async
 async function loadGpx(path) {
   const req = await fetch(path);
+  if (!req.ok) {
+    throw new Error(`Cannot load gpx ${path}: ${req.status}`);
+  }
   const gpx = new gpxParser();
   gpx.parse(await req.text());
   return gpx;
