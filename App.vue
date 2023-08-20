@@ -1,7 +1,10 @@
 <template>
   <div v-if="status === 'contrib'">
+    <div id="link-to-noncontrib">
+      <button @click="navigateToNonContrib()">Normal view</button>
+    </div>
     <div id="contrib-location">
-      <button @click="contributeDeviceLocation()">Contibute location <span v-if="lskey"> ({{ lskey }})</span></button>
+      <button @click="contributeDeviceLocation()">Contribute location <span v-if="lskey"> ({{ lskey }})</span></button>
       <code>{{ gpxURL }}</code>
     </div>
     <ul id="debug-log">
@@ -630,6 +633,11 @@ export default Vue.defineComponent({
         return false;
       }
     },
+    navigateToNonContrib() {
+      const params = new URLSearchParams(window.location.search);
+      params.delete("contrib");
+      window.location.search = params;
+    },
     contributeURL(lat, lon, ts) {
       let res = this.baseURLWithATrack
       res += `,${lat.toFixed(4)},${lon.toFixed(4)},${ts}`
@@ -707,6 +715,14 @@ tr.current td:first-of-type {
   border: 1px solid black;
   background: yellow;
   color: black;
+}
+#link-to-noncontrib {
+  text-align: center;
+  padding: 20px;
+  padding-bottom: 60px;
+}
+#link-to-noncontrib button {
+  font-size: 20px;
 }
 #contrib-location button {
   padding: 1em;
