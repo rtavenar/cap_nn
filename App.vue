@@ -35,7 +35,7 @@
           </td>
           <td>{{ r.lat }}</td>
           <td>{{ r.lon }}</td>
-          <td v-bind:class="{empty_cell: !r.pessimistic_is_plausible}" v-if="r.distAlt">
+          <td v-if="r.distAlt">
             {{ Math.round(r.distAlt) }}km, {{ Math.round(r.dposAlt) }}D+ ({{
               r.velAlt.toFixed(1)
             }}km/h) ({{
@@ -44,7 +44,7 @@
             strain/h)
           </td>
           <td v-else></td>
-          <td v-bind:class="{empty_cell: !r.optimistic_is_plausible}" v-if="r.dist">
+          <td v-if="r.dist">
             {{ Math.round(r.dist) }}km, {{ Math.round(r.dpos) }}D+ ({{
               r.vel.toFixed(1)
             }}km/h) ({{
@@ -234,14 +234,16 @@ export default Vue.defineComponent({
         }
         let row = { ...p, elapsed };
         res.push(row);
-        row.dist = d_opt;
-        row.dpos = deniv_opt;
-        row.vel = v_opt;
-        row.optimistic_is_plausible = optimistic_is_plausible;
-        row.distAlt = d_pess;
-        row.dposAlt = deniv_pess;
-        row.velAlt = v_pess;
-        row.pessimistic_is_plausible = pessimistic_is_plausible;
+        if (optimistic_is_plausible) {
+          row.dist = d_opt;
+          row.dpos = deniv_opt;
+          row.vel = v_opt;
+        }
+        if (pessimistic_is_plausible) {
+          row.distAlt = d_pess;
+          row.dposAlt = deniv_pess;
+          row.velAlt = v_pess;
+        }
       }
       return res;
     },
@@ -467,7 +469,7 @@ td {
   padding-right: 1em;
   text-align: center;
 }
-td:empty, td.empty_cell {
+td:empty {
   background-color: #ccc;
 }
 tr:not(.depart) i {
