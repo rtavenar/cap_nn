@@ -1,5 +1,17 @@
 <template>
-  <div v-if="status === 'ok'">
+  <div v-if="status === 'contrib'">
+    <div id="link-to-noncontrib">
+      <button @click="navigateToNonContrib()">Normal view</button>
+    </div>
+    <div id="contrib-location">
+      <button @click="contributeDeviceLocation()">Contribute location <span v-if="lskey"> ({{ lskey }})</span></button>
+      <code>{{ gpxURL }}</code>
+    </div>
+    <ul id="debug-log">
+      <li v-for="l in debug.log">{{l}}</li>
+    </ul>
+  </div>
+  <div v-else-if="status === 'ok'">
     <page-title
       :v="
         (lskey !== gpxURL ? '(' + lskey + ') ' : '') +
@@ -14,20 +26,33 @@
       <span v-if="lskey !== gpxURL"> ({{ lskey }})</span>
     </h1>
 
+    <div id="map"></div>
+
+    <ul v-if="debug.on" id="debug-log">
+      <li v-for="l in debug.log">{{l}}</li>
+    </ul>
+    <div v-if="debug.on">
+      DEBUG:
+      #points = {{ debug.limitPointCount }} <input type="range" v-model.number="debug.limitPointCount" min="0" max="50" />
+      // min speed: <input v-model.number="minSpeed" />
+      // max speed: <input v-model.number="maxSpeed" />
+    </div>
+
     <div id="found_tracks">
       <h2><span id="track_name"></span> <span id="track_length"></span></h2>
-      <table id="tab-passages">
+      <table id="tab-passages" :class="tableClasses">
         <tr>
           <th>Heure</th>
           <th>Latitude</th>
           <th>Longitude</th>
-          <th>Distance (pessimiste)</th>
-          <th>Distance (optimiste)</th>
+          <th v-if="tableHasPessimisticColumn">Au pire</th>
+          <th :colspan="tableHasPessimisticColumn ? 1 : 2">Au mieux</th>
         </tr>
         <tr
           v-for="r in tableRows"
           :key="r.ts"
-          :class="{ depart: r.start, current: r.ts === currentPointTimestamp }"
+          :class="{ depart: r.start, current: r.ts === currentPointTimestamp, selected: r.ts === selectedPointTimestamp }"
+          @click="selectedPointTimestamp = r.ts"
         >
           <td>
             <i>(Départ)</i>
@@ -40,24 +65,25 @@
               r.velAlt.toFixed(1)
             }}km/h) ({{
               (((r.distAlt + r.dposAlt / 150) / r.elapsed) * 3600).toFixed(1)
-            }}
-            strain/h)
+            }}{{ff}}/h)
           </td>
-          <td v-else></td>
-          <td v-if="r.dist">
+          <td v-if="r.dist" :colspan="r.distAlt ? 1 : 2">
             {{ Math.round(r.dist) }}km, {{ Math.round(r.dpos) }}D+ ({{
               r.vel.toFixed(1)
             }}km/h) ({{
               (((r.dist + r.dpos / 150) / r.elapsed) * 3600).toFixed(1)
-            }}
-            strain/h)
+            }}{{ff}}/h)
           </td>
-          <td v-else></td>
+          <td v-else :colspan="2"></td>
         </tr>
       </table>
+      <p>
+        Selon le gpx, au total, {{cdsText(distTotal, dposTotal)}}.
+      </p>
+      <p v-if="eta">
+        Estimation de l'arrivée en maintenant le rythme actuel : {{ niceTimestamp(eta) }}. 
+      </p>
     </div>
-
-    <div id="map"></div>
 
     <div id="config">
       <h3>Information et configuration</h3>
@@ -94,6 +120,13 @@
       <button @click="store.points.splice(0, store.points.length)">
         Effacer les points (localement)
       </button>
+      <hr/>
+      Config SMS
+      <input type="checkbox" v-model="smsWithStart" title="Lien avec heure départ"/>
+      <input type="checkbox" v-model="smsWithHour" title="Heure du SMS"/>
+      <input type="checkbox" v-model="smsWithGenericLink" title="Ajout lien générique"/>
+      <br/><pre><code ref="sms">{{smsURL}}</code></pre>
+      <button @click="copy($refs.sms)">Copier dans le presse papier</button>
     </div>
   </div>
   <div v-else-if="status === 'loading'">
@@ -108,13 +141,12 @@
     Exemple de config SMS : <br /><code
       >{{
         baseURL
-      }}?track=migoual-concept-race&lat=%1$f&lon=%2$f&at=%3$ts&start=2022-07-09T06:03</code
+      }}?A=migoual-concept-race,%1$.4f,%2$.4f,%3$ts,2022-07-09T06:03</code
     >
     <br /><br />Exemples pour tester le multipoint : <br /><input
       v-model="testQueryFragmentToAdd"
       style="width: 40em"
     />
-    <br />
     <ul>
       <li>
         <a :href="baseURL + testQueryFragmentToAdd"
@@ -138,11 +170,15 @@ let baseURL = window.location.origin + window.location.pathname;
 
 export default Vue.defineComponent({
   data: () => ({
+    ff: "🔥",
     status: "none",
     statusErrorMessage: "Unknown error",
     gpxURL: null,
     //gpx: non reactive
+    //pointMarkers: non reactive
     gpxTrkid: null,
+    distTotal: 0,
+    dposTotal: 0,
     lskey: null,
     saveToLocalStorageOnStoreChange: true,
     store: {
@@ -151,8 +187,19 @@ export default Vue.defineComponent({
       shareNewPoints: true,
       importSharedPoints: true,
     },
+    debug: {
+      on: false,
+      limitPointCount: 999,
+      log: [],
+    },
+    minSpeed: 3,
+    maxSpeed: 16,
     currentPointTimestamp: null,
+    selectedPointTimestamp: null,
     baseURL,
+    smsWithStart: true,
+    smsWithHour: true,
+    smsWithGenericLink: true,
     testQueryFragmentToAdd: "?track=migoual-concept-race",
     testUrlsToShowOnError: [
       "&lat=44.12433&lon=3.13856&at=2022-01-05T07:33",
@@ -167,6 +214,23 @@ export default Vue.defineComponent({
     this.gpx = null;
   },
   computed: {
+    baseURLWithATrack() {
+      return this.baseURL + '?A=' + getURLParams().track
+    },
+    smsURL() {
+      let res = this.baseURLWithATrack
+      res += ',%1$.4f,%2$.4f,%3$ts'
+      if (this.smsWithStart && this.start) {
+        res += `,${this.start}`
+      }
+      if (this.smsWithHour) {
+        res += '\n(%3$tT)'
+      }
+      if (this.smsWithGenericLink) {
+        res += '\nhttp://maps.google.com/?ll=%1$.4f,%2$.4f'
+      }
+      return res
+    },
     sharedURLlink() {
       return getProtectedTextURL(lskeyToDocid(this.lskey), false, false, true);
     },
@@ -184,68 +248,115 @@ export default Vue.defineComponent({
       },
     },
     // to display the table
+    tableHasPessimisticColumn() {
+      return Math.max(...this.tableRows.map(r => r.distAlt !== undefined))
+    },
+    eta() {
+      if (this.tableRows.length === 0) {
+        return null;
+      }
+      const r = this.tableRows[0]
+      const totalStrain = this.distTotal + this.dposTotal / 150
+      const currentStrainPerTime = (r.dist + r.dpos / 150) / r.elapsed
+      return this.start + totalStrain / currentStrainPerTime
+    },
     tableRows() {
       if (this.status !== "ok") {
         return [];
       }
-      const res = [];
       const track = this.gpx.tracks[this.gpxTrkid];
       let points = this.store.points;
 
-      {
-        let p0 = track.points[0];
-        res.push({ lat: p0.lat, lon: p0.lon, ts: this.start, start: true });
+      if (this.debug.on && points.length > this.debug.limitPointCount) {
+          points = points.slice(0, this.debug.limitPointCount);
       }
 
-      let max_dist_first_half = -1;
-      let min_dist_second_half = Infinity;
-      for (let i = 0; i < points.length; i++) {
-        let p = points[i];
-        let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000; // km
-        if (d_opt < min_dist_second_half) {
-          min_dist_second_half = d_opt;
+      const cdplus = compute_dplus_cumul(track)
+
+      // a list of lists of int (i.e., for each gps point, the indices of the possible track points)
+      let hypothesis = points.map(p => representerNearestPointsInTrack(p, track, 1.5, 30))
+      let lastWithoutEmpty = hypothesis
+      const hasEmpty = () => Math.max(...hypothesis.map(h => h.length === 0))
+      const rememberIfNotEmpty = () => {
+        if (!hasEmpty()) {
+          lastWithoutEmpty = hypothesis
         }
       }
 
-      for (let i = 0; i < points.length; i++) {
-        let p = points[i];
-        let optimistic_is_plausible = true;
-        let pessimistic_is_plausible = true;
-
-        let d_opt = distance_covered_second_half(p.lat, p.lon, track) / 1000; // km
-        let d_pess = distance_covered_first_half(p.lat, p.lon, track) / 1000; // km
-        let deniv_opt = cumul_dplus_second_half(p.lat, p.lon, track);
-        let deniv_pess = cumul_dplus_first_half(p.lat, p.lon, track);
+      //console.log("INIT")
+      //console.log(JSON.stringify(hypothesis))
+      
+      // remove any candidate that does not comply with the speed limits
+      hypothesis = hypothesis.map((h, i) => h.filter( ind => {
+        const p = points[i];
         let elapsed = p.ts - this.start; // s
+        // we keep the points acquired before the start but we will need to handle them
+        if (elapsed < 0) {
+          return true;
+        }
+        let v = track.distance.cumul[ind] / 1000 / (elapsed / 3600);
+        // we ignore the lower speed limit at the beginning (30min), in case the race starts a little late
+        if (elapsed < 30*60) {
+          return v < this.maxSpeed;
+        }
+        return v > this.minSpeed && v < this.maxSpeed;
+      }))
+      rememberIfNotEmpty()
 
-        let v_opt = d_opt / (elapsed / 3600);
-        let v_pess = d_pess / (elapsed / 3600);
+      // for the before-the-start points, we fake their closest index as being the start point
+      hypothesis = hypothesis.map((h, i) => {
+        const p = points[i];
+        let elapsed = p.ts - this.start; // s
+        if (elapsed < 0) {
+          return [0]
+        }
+        return h
+      })
+      rememberIfNotEmpty()
 
-        if (v_opt > 20 || min_dist_second_half < d_opt - 1) {
-          // -1 to keep some GPS error margin
-          optimistic_is_plausible = false;
-        }
-        if (d_pess > max_dist_first_half) {
-          max_dist_first_half = d_pess;
-        }
-        if (max_dist_first_half > d_pess + 1) {
-          // +1 to keep some GPS error margin
-          pessimistic_is_plausible = false;
-        }
-        let row = { ...p, elapsed };
-        res.push(row);
-        if (optimistic_is_plausible) {
-          row.dist = d_opt;
-          row.dpos = deniv_opt;
-          row.vel = v_opt;
-        }
-        if (pessimistic_is_plausible) {
-          row.distAlt = d_pess;
-          row.dposAlt = deniv_pess;
-          row.velAlt = v_pess;
-        }
+      //console.log("TOO FAST/SLOW")
+      //console.log(JSON.stringify(hypothesis))
+      
+      { // remove all incoherent points (that come before in the track than the previous one)
+        const minH = hypothesis.map(h => Math.min(...h))
+        hypothesis = hypothesis.map((h, i) => h.filter(ind => i===hypothesis.length-1 || ind <= minH[i+1]))
       }
-      return res;
+      rememberIfNotEmpty()
+
+      //console.log("BEFORE EARLIEST NEXT")
+      //console.log(JSON.stringify(hypothesis))
+
+      // fill in the information for the rendering
+      let res = [];
+      lastWithoutEmpty.forEach((h, i) => {
+        const p = points[i]
+        const elapsed = p.ts - this.start // s
+        const row = { ...p, elapsed }
+        res.push(row)
+        let ind = h[h.length-1]
+        row.dist = track.distance.cumul[ind] / 1000 // km
+        row.vel = row.dist / (elapsed / 3600) // km/h
+        row.dpos = cdplus[ind]
+        if (h.length > 1) {
+          ind = h[0]
+          row.distAlt = track.distance.cumul[ind] / 1000 // km
+          row.velAlt = row.distAlt / (elapsed / 3600) // km/h
+          row.dposAlt = cdplus[ind]
+        }
+      })
+
+
+      { // insert fake (start) point 
+        let p0 = track.points[0];
+        res = [
+          ...res.filter(p => p.elapsed <= 0).map(p => ({...p, start: true})),
+          { lat: p0.lat, lon: p0.lon, ts: this.start, start: true },
+          ...res.filter(p => p.elapsed > 0),
+        ]
+      }
+
+      res.reverse() // most recent on top to avoid needing to scroll
+      return res
     },
   },
   watch: {
@@ -257,6 +368,15 @@ export default Vue.defineComponent({
         }
       },
     },
+    selectedPointTimestamp() {
+      if (this.pointMarkers) {
+        for (let i in this.pointMarkers) {
+          let isSel = this.store.points[i].ts === this.selectedPointTimestamp;
+          this.pointMarkers[i]._icon.style.outline = isSel ? "3px solid red" : null;
+          //this.pointMarkers[i]._icon.classList.toggle('selected-marker', isSel);
+        }
+      }
+    },
   },
   mounted() {
     // for debugging, make it accessible as "vm"
@@ -265,6 +385,43 @@ export default Vue.defineComponent({
     this.asyncInit();
   },
   methods: {
+    cdsText(dist, dpos) {
+      const eff = dist + dpos / 150;
+      return `${dist.toFixed(1)}km, ${dpos.toFixed(0)}D+ (${eff.toFixed(0)}${this.ff})`;
+    },
+    estimateAsTooltip(ll) {
+      const track = this.gpx.tracks[this.gpxTrkid];
+      const cdplus = compute_dplus_cumul(track)
+      const nearests = representerNearestPointsInTrack({lat:ll.lat, lon:ll.lng}, track, 1.5, 30)
+      const strains = nearests.map(i => [i, track.distance.cumul[i] / 1000 + cdplus[i] / 150])
+      const getStrain = r => r.start ? 0 : r.dist + r.dpos / 150
+      console.log(this.tableRows.length, this.tableRows[0])
+      if (this.tableRows.length === 0 || ! this.tableRows[0].dist) {
+        return nearests.map(i => this.cdsText(track.distance.cumul[i] / 1000, cdplus[i])).join("<br/>");
+      }
+      const times = strains.map(([i,s]) => {
+        let iafter = this.tableRows.length - 1
+        for (; iafter >= 0 ; iafter--) {
+          if (s < this.tableRows[iafter].dist + this.tableRows[iafter].dpos / 150) {
+            break
+          }
+        }
+        if (iafter === -1) {
+          const r = this.tableRows[0]
+          const currentStrainPerTime = getStrain(r) / r.elapsed
+          return [i, this.start + s / currentStrainPerTime]
+        } else {
+          const r1 = this.tableRows[iafter+1]
+          const r2 = this.tableRows[iafter]
+          const s1 = getStrain(r1)
+          const s2 = getStrain(r2)
+          const t1 = r1.elapsed || 0
+          const t2 = r2.elapsed || 0
+          return [i, this.start + t1 + (s-s1)/(s2-s1) * (t2-t1)]
+        }
+      })
+      return times.map(([i,t]) => this.niceTimestamp(t)+"<br/> └─ "+this.cdsText(track.distance.cumul[i] / 1000, cdplus[i])).join("<br/>")
+    },
     niceTimestamp(s) {
       //new Date(s * 1000).toLocaleString();
       let str = timestampToDatetimeInputString(s * 1000);
@@ -285,13 +442,22 @@ export default Vue.defineComponent({
       localStorage.setItem(k, JSON.stringify(this.store));
     },
     async asyncInit() {
-      if (!(await this.digestURL())) {
+      const st = await this.digestURL();
+      if (typeof st === 'string') {
+        this.status = st;
+        return;
+      }
+      if (st === false) {
         this.status = "error";
         return;
       }
       this.saveToLocalStorage(); // just to be sure, but it is probably ok with the watch
       this.drawMap();
       this.status = "ok";
+    },
+    async copy(ref) {
+      await navigator.clipboard.writeText(ref.textContent);
+      ref.classList.add("copied");
     },
     drawMap() {
       if (!document.getElementById("map")) {
@@ -300,7 +466,7 @@ export default Vue.defineComponent({
         return;
       }
       const track = this.gpx.tracks[this.gpxTrkid];
-      let mymap = L.map("map");
+      const mymap = L.map("map");
 
       new ResizeObserver(() => {
         mymap.invalidateSize();
@@ -326,7 +492,7 @@ export default Vue.defineComponent({
         let ll = ev.latlng;
         let m = L.marker(ll).addTo(mymap);
         m._icon.classList.add("estimate");
-        m.bindTooltip("TODO estimate");
+        m.bindTooltip(this.estimateAsTooltip(ll), {permanent: true});
         //m.bindTooltip(estimate_to_html(estimate_progress(ll))) // TODO
         m.on("click", () => {
           m.remove();
@@ -339,14 +505,16 @@ export default Vue.defineComponent({
 
       let end = Math.max(...this.store.points.map((p) => p.ts));
       let ts = this.currentPointTimestamp;
+      this.pointMarkers = []
       for (let p of this.store.points) {
         let m = L.marker([p.lat, p.lon]).addTo(mymap);
-        m.bindTooltip(`
-                    ${new Date(p.ts * 1000)
-                      .toISOString()
-                      .replace(/(T|:\d\d\..*)/g, " ")}<br/>
+        this.pointMarkers.push(m)
+        m.bindTooltip(`${this.niceTimestamp(p.ts)}<br/>
                     Temps écoulé : <b>${time_to_string(p.ts - this.start)}</b>
                     `);
+        m.on("click", () => {
+          this.selectedPointTimestamp = p.ts;
+        });
         if (p.ts !== ts) {
           m._icon.style.filter = `grayscale(${
             80 - (80 * (p.ts - this.start)) / (end - this.start)
@@ -360,10 +528,20 @@ export default Vue.defineComponent({
     async digestURL() {
       let err = "Erreur de paramètres dans l'URL. <br/>";
       const p = getURLParams();
+      if ("debug" in p) {
+        this.debug.on = true;
+      }
+      if ("contrib" in p) {
+        const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
+        this.lskey = p.lskey ?? gpxURL; // also used for protectedtext sharing
+        this.gpxURL = gpxURL;
+        return "contrib";
+      }
       if ("track" in p) {
         const gpxURL = "gpx/" + p.track + ".gpx"; // TODO move this wrapping as a easier to find config
         // We use the gpxURL to allow following several races "at the same time"...
         // We also allow a lskey=... url param to allow following several runners in the same race
+        // NB: see param parsing for short notation of gpxURL+lskey
         this.lskey = p.lskey ?? gpxURL;
         this.maybeLoadFromLocalStorage();
         this.gpxTrkid = p.trkid ?? 0;
@@ -391,10 +569,15 @@ export default Vue.defineComponent({
           let ts = guessTimestamp(p.at) / 1000;
           this.currentPointTimestamp = ts;
           if (this.store.shareNewPoints) {
-            await appendSharedContent(
-              this.lskey,
-              this.niceTimestamp(ts) + "\n" + window.location.toString() + "\n"
-            );
+            try {
+              await appendSharedContent(
+                this.lskey,
+                this.niceTimestamp(ts) + "\n" + window.location.toString() + "\n"
+              );
+            } catch (e) {
+              // e.g. cors limitations
+              console.log("APPEND SHARED FAILED", e)
+            }
           }
           // avoid duplicates
           if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
@@ -407,18 +590,23 @@ export default Vue.defineComponent({
         }
         // import points from the remote pad
         if (this.store.importSharedPoints) {
-          let sharedContent = await getSharedContent(this.lskey);
-          for (let l of sharedContent
-            .split("\n")
-            .filter((l) => l.startsWith(this.baseURL))) {
-            // we redo mostly as above... some repetition
-            let p = getURLParams(new URL(l));
-            if (countKeysAmong(p, "lat", "lon", "at") == 3) {
-              let ts = guessTimestamp(p.at) / 1000;
-              if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
-                this.store.points.push(new Point(ts, p.lat, p.lon));
+          try {
+            let sharedContent = await getSharedContent(this.lskey);
+            for (let l of sharedContent
+              .split("\n")
+              .filter((l) => l.startsWith(this.baseURL))) {
+              // we redo mostly as above... some repetition
+              let p = getURLParams(new URL(l));
+              if (countKeysAmong(p, "lat", "lon", "at") == 3) {
+                let ts = guessTimestamp(p.at) / 1000;
+                if (this.store.points.map((p) => p.ts).indexOf(ts) === -1) {
+                  this.store.points.push(new Point(ts, p.lat, p.lon));
+                }
               }
             }
+          } catch (e) {
+            // e.g. cors limitations
+            console.log("GET SHARED FAILED", e)
           }
         }
         // ensure points are sorted
@@ -431,6 +619,13 @@ export default Vue.defineComponent({
           this.currentPointTimestamp = sps[sps.length - 1].ts;
         }
 
+        { // compute track total stats
+          const track = this.gpx.tracks[this.gpxTrkid];
+          const cdplus = compute_dplus_cumul(track);
+          this.distTotal = track.distance.cumul[track.distance.cumul.length-1] / 1000;
+          this.dposTotal = cdplus[cdplus.length-1];
+        }
+
         return true;
       } else {
         this.statusErrorMessage =
@@ -438,12 +633,40 @@ export default Vue.defineComponent({
         return false;
       }
     },
+    navigateToNonContrib() {
+      const params = new URLSearchParams(window.location.search);
+      params.delete("contrib");
+      window.location.search = params;
+    },
+    contributeURL(lat, lon, ts) {
+      let res = this.baseURLWithATrack
+      res += `,${lat.toFixed(4)},${lon.toFixed(4)},${ts}`
+      return res
+    },
+    async contributeDeviceLocation() {
+      try {
+        const pos = await getCurrentPosition({ /*enableHighAccuracy: true <- timeouting in firefox mobile...,*/ timeout: 15000, maximumAge: 10000 });
+        const ts = Math.round(pos.timestamp/1000)
+        const url = this.contributeURL(pos.coords.latitude, pos.coords.longitude, ts)
+        this.debug.log.push(url)
+        await appendSharedContent(
+          this.lskey,
+          this.niceTimestamp(ts) + "\n" + url + "\n"
+        );
+        if (this.debug.log.slice(-1)[0] === url) {
+          this.debug.log.splice(-1, 1);
+        }
+        this.debug.log.push("ok... "+url)
+      } catch (e) {
+        this.debug.log.push(safeHTMLText(e.message))
+      };
+    },
   },
 });
 </script>
 <style>
 body {
-  --map-height: 10em;
+  --map-height: 50vh;
 }
 img.estimate {
   filter: hue-rotate(150deg);
@@ -453,7 +676,7 @@ img.grayscale {
 }
 #map {
   resize: both;
-  height: --var(--map-height);
+  height: var(--map-height);
   margin-top: 2em;
 }
 
@@ -475,7 +698,35 @@ td:empty {
 tr:not(.depart) i {
   visibility: hidden;
 }
+tr.selected td:first-of-type {
+  background: #FCC;
+}
 tr.current td:first-of-type {
   color: teal;
+}
+.copied {
+  background: green;
+  color: white;
+}
+.copied::after {
+  content: "copied";
+  position: relative;
+  top: -1em;
+  border: 1px solid black;
+  background: yellow;
+  color: black;
+}
+#link-to-noncontrib {
+  text-align: center;
+  padding: 20px;
+  padding-bottom: 60px;
+}
+#link-to-noncontrib button {
+  font-size: 20px;
+}
+#contrib-location button {
+  padding: 1em;
+  font-size: 30px;
+  margin: 0 1em;
 }
 </style>

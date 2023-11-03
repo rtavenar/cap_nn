@@ -1,6 +1,9 @@
 // TODO make it async
 async function loadGpx(path) {
   const req = await fetch(path);
+  if (!req.ok) {
+    throw new Error(`Cannot load gpx ${path}: ${req.status}`);
+  }
   const gpx = new gpxParser();
   gpx.parse(await req.text());
   return gpx;
@@ -22,7 +25,30 @@ function guessTimestamp(s) {
 
 function getURLParams(url = undefined) {
   const urlSearchParams = new URLSearchParams((url ?? window.location).search);
-  return Object.fromEntries(urlSearchParams.entries());
+  const urlObject = Object.fromEntries(urlSearchParams.entries());
+  const shortcuts = {
+    A: 'track lat lon at start',
+  };
+  const res = {};
+  // consume possible shortcuts
+  for (let s in shortcuts) {
+    if (s in urlObject) {
+      const keys = shortcuts[s].split(/ /g);
+      Object.assign(res, Object.fromEntries(urlObject[s].split(/,/g).map((v,i) => [keys[i], v])));
+      delete urlObject[s];
+    }
+  }
+  // save other params
+  Object.assign(res, urlObject);
+  // compact shortcut to specify lskey directly in track
+  if ((res.track ?? '').indexOf('@') !== -1) {
+    const [tr, ...rest] = res.track.split('@');
+    res.track = tr;
+    if (! res.lskey) {
+      res.lskey = `hash/${tr}/${rest.join('_')}`
+    }
+  }
+  return res;
 }
 
 // Escape text so that it can be used safely as an html content
@@ -132,5 +158,14 @@ function asyncComponent(relativePath) {
   const { loadModule } = window["vue3-sfc-loader"];
   return Vue.defineAsyncComponent(() => {
     return loadModule("./" + relativePath, vueSfcLoaderOptions);
+  });
+}
+function getCurrentPosition(options) {
+  return new Promise(function (resolve, reject) {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    } else {
+      reject('Geolocation not available in navigator');
+    }
   });
 }
