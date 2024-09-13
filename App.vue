@@ -83,6 +83,9 @@
       <p v-if="eta">
         Estimation de l'arrivée en maintenant le rythme actuel : {{ niceTimestamp(eta) }}. 
       </p>
+      <p v-if="eta">
+        (clicker sur la trace pour avoir l'estimation de l'heure de passage à cet endroit)
+      </p>
     </div>
 
     <div id="config">
